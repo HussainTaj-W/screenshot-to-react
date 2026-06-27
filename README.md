@@ -105,23 +105,88 @@ uv run screenshot-to-react
 
 ### Docker / Podman
 
-A `Dockerfile` bundles everything (Python + uv, Node, Playwright Chromium;
-Netlify CLI is auto-installed at runtime). Build once, then mount the project
-tree so inputs, outputs, `.env`, and skills come from the host:
+A `Dockerfile` bundles the whole toolchain (Python + uv, Node 20, Playwright
+Chromium; Netlify CLI is auto-installed at runtime). The image carries its own
+code and virtualenv; at runtime you **mount only your data** at `/data` and pass
+**secrets** with `--env-file` — nothing secret is baked into the image.
+
+The image defaults the input/output paths to the `/data` mount:
+
+| Env (baked default)       | Value                          |
+| ------------------------- | ------------------------------ |
+| `PIPELINE_TOP`            | `/data`                        |
+| `PIPELINE_INSTRUCTIONS`   | `/data/input/instructions.md`  |
+| `PIPELINE_REFERENCES_DIR` | `/data/input`                  |
+| `PIPELINE_SKILLS_DIR`     | `/app/.agents/skills` (baked)  |
+| `PIPELINE_NAME`           | `mylanding`                    |
+
+So mount a directory containing `input/` at `/data`; the generated `<name>/`
+project is written back there.
+
+**1. Build the image** (from the `harness/` directory):
 
 ```bash
 podman build -t screenshot-to-react .
+# or: docker build -t screenshot-to-react .
+```
 
-# Mount the parent project dir (which holds harness/, input/, and the output)
-# and run from harness/ so the PIPELINE_* relative paths resolve as on the host:
+**2. Prepare a secrets env file** (do NOT bake secrets into the image). It needs
+the LLM key/base URL, the Netlify token, and the model(s):
+
+```bash
+# secrets.env
+OPENAI_API_KEY=sk-...
+OPENAI_BASE_URL=https://...        # if using an OpenAI-compatible gateway
+NETLIFY_AUTH_TOKEN=nfp_...
+PIPELINE_MODEL=openai:gpt-5.4-mini
+```
+
+**3. Run** — mount the data directory (the one holding `input/`) at `/data`:
+
+```bash
 podman run --rm \
-  -v "$PWD/..":/work \
-  --workdir /work/harness \
+  --env-file secrets.env \
+  -v "$PWD/..":/data \
   screenshot-to-react
 ```
 
-Pass flags after the image name (e.g. `... screenshot-to-react --no-deploy -v`),
-or configure everything via the mounted `.env`. (`docker` works identically.)
+Here `$PWD/..` is the parent of `harness/` (it contains `input/`); the output
+`mylanding/` lands next to it on the host. Pass extra flags after the image
+name, e.g. `... screenshot-to-react --no-deploy -v`. `docker` works identically
+(swap `podman` → `docker`).
+
+> Do **not** mount the host source over the image (e.g. `-v $PWD:/work`): that
+> shadows the image's prebuilt venv (including Playwright's driver) and breaks
+> screenshot capture. Mount data at `/data` and let the image run its own code.
+
+#### Windows
+
+On Windows the only differences are the shell's path syntax and volume mounts.
+
+**PowerShell:**
+
+```powershell
+docker build -t screenshot-to-react .
+
+docker run --rm `
+  --env-file secrets.env `
+  -v "${PWD}\..:/data" `
+  screenshot-to-react
+```
+
+**Command Prompt (cmd.exe):**
+
+```bat
+docker run --rm --env-file secrets.env -v "%cd%\..:/data" screenshot-to-react
+```
+
+Notes for Windows:
+- Use **Docker Desktop with the WSL 2 backend** (or run inside WSL 2 and use the
+  Linux commands above) — the Linux-based image needs a Linux container engine.
+- If you hit volume-mount permission issues, run from a path under your WSL 2
+  home or ensure the drive is shared in Docker Desktop → Settings → Resources →
+  File sharing.
+- Line endings: keep `secrets.env` as LF; some tooling rejects CRLF in env files.
 
 ### Inputs
 
