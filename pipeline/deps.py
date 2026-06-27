@@ -32,7 +32,7 @@ DEFAULT_BUILD_CAP = 3
 DEFAULT_VISUAL_CAP = 3
 
 # Default judge similarity threshold T (tunable per design.md open questions).
-DEFAULT_SIMILARITY_THRESHOLD = 0.95
+DEFAULT_SIMILARITY_THRESHOLD = 0.9
 
 # Default viewport width used only when the analyst has not yet inferred one.
 DEFAULT_VIEWPORT_WIDTH = 1280

@@ -58,20 +58,38 @@ class SkillUsage:
         return "\n".join(lines)
 
 
-def build_skills_capabilities(skills_dir: Path | None) -> tuple[list, SkillUsage | None]:
+# Skills relevant to the builder stage (React/UI/UX code generation). Mounting
+# only these keeps the builder's skill menu focused instead of including
+# unrelated skills (Playwright/Netlify/Python/Pydantic) that just add noise.
+BUILDER_SKILLS = (
+    "vercel-react-best-practices",
+    "tailwind-design-system",
+    "frontend-design",
+    "fixing-accessibility",
+)
+
+
+def build_skills_capabilities(
+    skills_dir: Path | None,
+    *,
+    only: tuple[str, ...] | None = BUILDER_SKILLS,
+) -> tuple[list, SkillUsage | None]:
     """Return ``(capabilities, usage)``.
 
     ``capabilities`` is a list to attach to the builder agent (a
     ``SkillsCapability`` plus a ``Hooks`` capability that records usage), or an
     empty list when no skills directory is available. ``usage`` is the tracker
     (``None`` when skills are unavailable).
+
+    ``only`` restricts which skills are exposed (by name). ``None`` exposes all
+    skills found in the directory.
     """
     if skills_dir is None or not Path(skills_dir).is_dir():
         return [], None
 
     from pydantic_ai import RunContext
     from pydantic_ai.capabilities.hooks import Hooks
-    from pydantic_ai_skills import SkillsCapability
+    from pydantic_ai_skills import SkillsCapability, discover_skills
 
     usage = SkillUsage()
     hooks = Hooks()
@@ -82,10 +100,13 @@ def build_skills_capabilities(skills_dir: Path | None) -> tuple[list, SkillUsage
             usage.record(call.tool_name, dict(args) if args else {})
         return args
 
-    skills_cap = SkillsCapability(
-        directories=[str(skills_dir)],
-        # run_skill_script enabled (no exclusions) per the accepted tradeoff.
-    )
+    if only is None:
+        skills_cap = SkillsCapability(directories=[str(skills_dir)])
+    else:
+        discovered = discover_skills(Path(skills_dir).resolve())
+        scoped = [s for s in discovered if s.name in only]
+        skills_cap = SkillsCapability(skills=scoped)
+    # run_skill_script enabled (no exclusions) per the accepted tradeoff.
     return [skills_cap, hooks], usage
 
 

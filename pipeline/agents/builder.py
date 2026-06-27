@@ -24,6 +24,16 @@ from .builder_agent import (
 )
 
 
+def _image_media_type(path: Path) -> str:
+    """Return the correct image media type for a file based on its extension."""
+    return {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+    }.get(path.suffix.lower(), "image/png")
+
+
 def _read_responsive_requirements(requirements_dir: Path) -> str:
     """Read the documented responsive assumptions for the responsive judge."""
     parts = []
@@ -138,6 +148,9 @@ def make_verify_deps(
 
     requirements_text = _read_requirements_text(deps.requirements_dir)
     reference_png = deps.reference_screenshot.read_bytes()
+    # Use the reference's ACTUAL media type (it may be a JPEG). Mislabeling a
+    # JPEG as image/png is rejected (HTTP 400) by strict providers like opus.
+    reference_media_type = _image_media_type(deps.reference_screenshot)
     available_assets = _available_assets_listing(deps.assets_dir, deps.requirements_dir)
     responsive_text = _read_responsive_requirements(deps.requirements_dir)
 
@@ -162,7 +175,7 @@ def make_verify_deps(
             "an external URL only when none fits):",
             available_assets,
             "REFERENCE SCREENSHOT:",
-            BinaryContent(data=reference_png, media_type="image/png"),
+            BinaryContent(data=reference_png, media_type=reference_media_type),
         ]
         # On a fix pass, include the discrepancies and the last build screenshot.
         if state.latest_verdict is not None and state.last_build_shot is not None:
@@ -219,7 +232,7 @@ def make_verify_deps(
     async def judge(vd: VerifyDeps, state: VerifyState, build_png: bytes) -> VisualVerdict:
         prompt = [
             "REFERENCE (target):",
-            BinaryContent(data=reference_png, media_type="image/png"),
+            BinaryContent(data=reference_png, media_type=reference_media_type),
             "CURRENT BUILD:",
             BinaryContent(data=build_png, media_type="image/png"),
         ]

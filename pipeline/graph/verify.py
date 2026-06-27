@@ -246,9 +246,10 @@ def build_verify_graph():
             else:
                 state.last_responsive_issues = []
 
-            # Non-blocking suggestions: pass to the builder next pass + log/report.
-            state.last_responsive_suggestions = list(rv.suggestions)
-            for s in rv.suggestions:
+            # Non-blocking suggestions: cap to the top few high-impact ones so
+            # the builder isn't flooded with trivia.
+            state.last_responsive_suggestions = list(rv.suggestions)[:3]
+            for s in state.last_responsive_suggestions:
                 log.info("    ~ suggest [%s]: %s", s.region, s.suggestion)
                 state.quality_findings.append(
                     f"Responsive ({deps.responsive_width}px) suggestion "

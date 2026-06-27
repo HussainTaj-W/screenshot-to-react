@@ -86,7 +86,7 @@ A vision LLM judge SHALL compare the captured screenshot to the reference and re
 - **THEN** the fidelity judge does not flag it as a discrepancy
 
 ### Requirement: Check responsive sanity at a mobile viewport
-Because no reference screenshot exists for non-reference viewports, the loop SHALL evaluate responsiveness by capturing the built page at a mobile width (default 375px) and asking a vision judge whether the layout is a sane, non-broken responsive layout consistent with the documented responsive assumptions. The responsive verdict SHALL distinguish objective breakage (a hard `broken` signal: horizontal overflow, content/elements wider than the viewport, overlapping or clipped content) from non-blocking structured suggestions (region + actionable improvement). Objective breakage SHALL block a match and SHALL be added to the discrepancies the builder must fix. Suggestions SHALL NOT block a match; they SHALL be recorded and offered to the builder as optional improvements on a subsequent fix pass.
+Because no reference screenshot exists for non-reference viewports, the loop SHALL evaluate responsiveness by capturing the built page at a mobile width (default 375px) and asking a vision judge whether the layout is a sane, non-broken responsive layout consistent with the documented responsive assumptions. The responsive verdict SHALL distinguish objective breakage (a hard `broken` signal: horizontal overflow, content/elements wider than the viewport, overlapping or clipped content) from non-blocking structured suggestions (region + actionable improvement). Suggestions SHALL be limited to high-impact responsiveness or user-experience improvements (capped to a small number, e.g. 3); low-value cosmetic nitpicks SHALL be omitted, and an already-usable layout SHALL yield zero suggestions, so the builder is not confused by trivia. Objective breakage SHALL block a match and SHALL be added to the discrepancies the builder must fix. Suggestions SHALL NOT block a match; they SHALL be recorded and offered to the builder as optional improvements on a subsequent fix pass.
 
 #### Scenario: Mobile layout is broken
 - **WHEN** the mobile capture shows objective breakage (e.g. horizontal overflow or an element wider than the viewport)
@@ -99,6 +99,10 @@ Because no reference screenshot exists for non-reference viewports, the loop SHA
 #### Scenario: Responsive suggestions offered
 - **WHEN** the responsive judge returns non-blocking improvement suggestions
 - **THEN** the suggestions are recorded and offered to the builder as optional improvements without blocking the match
+
+#### Scenario: Only high-impact suggestions surface
+- **WHEN** the mobile layout is already usable with only minor cosmetic imperfections
+- **THEN** the judge returns no (or at most a few high-impact) suggestions, so the builder is not confused by low-value nitpicks
 
 #### Scenario: Responsive assumptions honored
 - **WHEN** the requirements document responsive assumptions (e.g. nav collapses, columns stack)
