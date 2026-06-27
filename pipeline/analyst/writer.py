@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..models import Provenance, Requirements
+from .models import Provenance, Requirements
 
 
 def _provenance_tag(p: Provenance) -> str:

@@ -1,11 +1,8 @@
-"""Structured data models shared across stages.
+"""Analyst data models: the ``Requirements`` contract and its sub-models.
 
-These are the contracts between agents:
-
-- ``Requirements`` is the analyst's structured output, written to the output
-  project's ``requirements/`` directory.
-- ``VisualVerdict`` is the judge's structured output (defined in the graph
-  module's verdict file but re-exported expectations live here for clarity).
+``Requirements`` is the analyst's structured output, written to the output
+project's ``requirements/`` directory and consumed by the builder. The builder's
+judge verdict models live separately in ``pipeline.builder.judges``.
 """
 
 from __future__ import annotations

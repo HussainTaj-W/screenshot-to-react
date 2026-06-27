@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from pipeline.deps import InputResolutionError, PipelineDeps
-from pipeline.preflight import _node_major_version, check_node, PreflightError
+from pipeline.core.deps import InputResolutionError, PipelineDeps
+from pipeline.core.preflight import _node_major_version, check_node, PreflightError
 
 
 def test_resolve_from_convention(sample_inputs):
@@ -35,12 +35,12 @@ def test_node_detection_present():
 
 
 def test_check_node_raises_when_too_old(monkeypatch):
-    monkeypatch.setattr("pipeline.preflight._node_major_version", lambda: 10)
+    monkeypatch.setattr("pipeline.core.preflight._node_major_version", lambda: 10)
     with pytest.raises(PreflightError):
         check_node(min_major=18)
 
 
 def test_check_node_raises_when_missing(monkeypatch):
-    monkeypatch.setattr("pipeline.preflight._node_major_version", lambda: None)
+    monkeypatch.setattr("pipeline.core.preflight._node_major_version", lambda: None)
     with pytest.raises(PreflightError):
         check_node(min_major=18)

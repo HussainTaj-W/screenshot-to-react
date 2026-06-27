@@ -12,18 +12,19 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.agents import analyst as analyst_mod
-from pipeline.agents import builder as builder_mod
-from pipeline.graph import scaffold as scaffold_mod
-from pipeline.graph.state import Discrepancy, Severity, VisualVerdict
-from pipeline.graph.verify import VerifyDeps
-from pipeline.models import (
+from pipeline.analyst import stage as analyst_mod
+from pipeline.analyst.models import (
     Requirements,
     ViewportInference,
     ViewportKind,
 )
+from pipeline.builder import stage as builder_mod
+from pipeline.builder.graph import VerifyDeps
+from pipeline.builder.judges import Discrepancy, Severity, VisualVerdict
+from pipeline.core import preview as preview_mod
+from pipeline.core import scaffold as scaffold_mod
+from pipeline.core.results import TerminalState
 from pipeline.orchestrator import run_pipeline
-from pipeline.results import TerminalState
 from pydantic_ai.models.test import TestModel
 
 
@@ -56,7 +57,6 @@ def _patch_everything(monkeypatch):
     # Verify graph tooling stubs (no npm/preview/browser).
     monkeypatch.setattr(scaffold_mod, "is_scaffolded", lambda wd: True)
     monkeypatch.setattr(scaffold_mod, "scaffold_app", lambda wd: None)
-    monkeypatch.setattr(scaffold_mod, "npm_install", lambda wd: None)
     monkeypatch.setattr(scaffold_mod, "copy_extracted_assets", lambda a, w: [])
 
     class _Server:
@@ -65,7 +65,7 @@ def _patch_everything(monkeypatch):
         def stop(self):
             pass
 
-    monkeypatch.setattr(scaffold_mod, "start_preview", lambda wd: _Server())
+    monkeypatch.setattr(preview_mod, "start_preview", lambda wd: _Server())
 
 
 def _stub_verify_deps(deps, *, build_ok=True, match_after=1, sim=0.99) -> VerifyDeps:

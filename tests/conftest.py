@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from pipeline.deps import PipelineDeps
+from pipeline.core.deps import PipelineDeps
 
 
 @pytest.fixture

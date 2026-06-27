@@ -11,17 +11,17 @@ from pathlib import Path
 
 from pydantic_ai import BinaryContent
 
-from ..deps import PipelineDeps
-from ..graph.state import VerifyState, VisualVerdict
-from ..graph.verify import VerifyDeps, build_verify_graph
-from ..graph.state import ResponsiveVerdict
-from ..results import BuildVerifyOutcome
-from .builder_agent import (
-    build_builder_agent,
-    build_fix_build_agent,
+from ..core.deps import PipelineDeps
+from ..core.results import BuildVerifyOutcome
+from .coding_agent import build_builder_agent, build_fix_build_agent
+from .graph import VerifyDeps, build_verify_graph
+from .judges import (
+    ResponsiveVerdict,
+    VisualVerdict,
     build_judge_agent,
     build_responsive_judge_agent,
 )
+from .state import VerifyState
 
 
 def _image_media_type(path: Path) -> str:

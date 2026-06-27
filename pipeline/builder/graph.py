@@ -26,12 +26,15 @@ from pathlib import Path
 
 from pydantic_graph import GraphBuilder, StepContext
 
-from ..logging_setup import get_logger
-from ..results import BuildVerifyOutcome
-from . import capture as capture_mod
-from . import quality as quality_mod
-from . import scaffold as scaffold_mod
-from .state import VerifyState, VisualVerdict
+from ..core import build as build_mod
+from ..core import capture as capture_mod
+from ..core import preview as preview_mod
+from ..core import quality as quality_mod
+from ..core import scaffold as scaffold_mod
+from ..core.logging import get_logger
+from ..core.results import BuildVerifyOutcome
+from .judges import VisualVerdict
+from .state import VerifyState
 
 log = get_logger("verify")
 
@@ -59,7 +62,7 @@ class VerifyDeps:
     fix_build = None  # async callable(deps, state) -> None (agent edits files in place)
     judge = None  # callable(deps, state, build_png) -> VisualVerdict
     responsive_judge = None  # callable(deps, state, mobile_png) -> ResponsiveVerdict
-    build_runner = staticmethod(scaffold_mod.build_app)
+    build_runner = staticmethod(build_mod.build_app)
     capture_runner = staticmethod(capture_mod.capture_page_async)
 
 
@@ -115,7 +118,7 @@ def build_verify_graph():
         if not scaffold_mod.is_scaffolded(deps.workdir):
             log.info("  scaffolding Vite+React+Tailwind app + npm install...")
             await asyncio.to_thread(scaffold_mod.scaffold_app, deps.workdir)
-            await asyncio.to_thread(scaffold_mod.npm_install, deps.workdir)
+            await asyncio.to_thread(build_mod.npm_install, deps.workdir)
 
         # The coding agent writes/edits files directly in the project.
         which = "regenerating" if state.verdict_history else "generating"
@@ -178,7 +181,7 @@ def build_verify_graph():
         state = ctx.state
 
         log.info("  preview server + Playwright capture @ %dpx...", deps.viewport_width)
-        server = await asyncio.to_thread(scaffold_mod.start_preview, deps.workdir)
+        server = await asyncio.to_thread(preview_mod.start_preview, deps.workdir)
         try:
             png = deps.capture_runner(server.url, viewport_width=deps.viewport_width)
             if inspect.isawaitable(png):

@@ -14,10 +14,10 @@ Flow:
 
 from __future__ import annotations
 
-from .deps import PipelineDeps
-from .logging_setup import get_logger
-from .preflight import run_preflight
-from .results import (
+from .core.deps import PipelineDeps
+from .core.logging import get_logger
+from .core.preflight import run_preflight
+from .core.results import (
     BuildVerifyOutcome,
     PipelineResult,
     TerminalState,
@@ -41,9 +41,9 @@ async def run_pipeline(
     """
     # Imported lazily so the orchestrator module stays importable even while
     # individual stages are still under construction / for targeted unit tests.
-    from .agents.analyst import run_analyst
-    from .agents.builder import run_build_verify
-    from .agents.deployer import run_deploy
+    from .analyst.stage import run_analyst
+    from .builder.stage import run_build_verify
+    from .deployer.stage import run_deploy
 
     # A passed global ``model`` sets the config default when not already set.
     if model and not deps.models.default:

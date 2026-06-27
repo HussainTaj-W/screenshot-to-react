@@ -16,9 +16,9 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from ..deps import PipelineDeps
-from ..graph import scaffold as scaffold_mod
-from ..results import BuildVerifyOutcome, DeployOutcome
+from ..core import build as build_mod
+from ..core.deps import PipelineDeps
+from ..core.results import BuildVerifyOutcome, DeployOutcome
 
 
 class DeployError(Exception):
@@ -63,7 +63,7 @@ async def run_deploy(
     deps: PipelineDeps,
     *,
     build_verify: BuildVerifyOutcome,
-    build_runner=scaffold_mod.build_app,
+    build_runner=build_mod.build_app,
     deploy_runner=None,
 ) -> DeployOutcome:
     """Deploy the built app to Netlify.

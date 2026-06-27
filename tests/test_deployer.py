@@ -6,13 +6,13 @@ from dataclasses import dataclass
 
 import pytest
 
-from pipeline.agents.deployer import (
+from pipeline.deployer.stage import (
     DeployError,
     _read_site_id,
     _persist_site_id,
     run_deploy,
 )
-from pipeline.results import BuildVerifyOutcome, DeployOutcome
+from pipeline.core.results import BuildVerifyOutcome, DeployOutcome
 
 
 @dataclass

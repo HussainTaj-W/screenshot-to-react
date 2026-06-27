@@ -7,14 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.graph import scaffold as scaffold_mod
-from pipeline.graph.state import (
-    Discrepancy,
-    Severity,
-    VerifyState,
-    VisualVerdict,
-)
-from pipeline.graph.verify import VerifyDeps, build_verify_graph
+from pipeline.builder.graph import VerifyDeps, build_verify_graph
+from pipeline.builder.judges import Discrepancy, Severity, VisualVerdict
+from pipeline.builder.state import VerifyState
+from pipeline.core import build as build_mod
+from pipeline.core import preview as preview_mod
+from pipeline.core import scaffold as scaffold_mod
 
 
 @dataclass
@@ -31,7 +29,7 @@ def _stub_scaffold(monkeypatch):
     """Avoid real npm/preview/browser in graph tests."""
     monkeypatch.setattr(scaffold_mod, "is_scaffolded", lambda wd: True)
     monkeypatch.setattr(scaffold_mod, "scaffold_app", lambda wd: None)
-    monkeypatch.setattr(scaffold_mod, "npm_install", lambda wd: None)
+    monkeypatch.setattr(build_mod, "npm_install", lambda wd: None)
     monkeypatch.setattr(scaffold_mod, "copy_extracted_assets", lambda a, w: [])
 
     class _Server:
@@ -40,7 +38,7 @@ def _stub_scaffold(monkeypatch):
         def stop(self):
             pass
 
-    monkeypatch.setattr(scaffold_mod, "start_preview", lambda wd: _Server())
+    monkeypatch.setattr(preview_mod, "start_preview", lambda wd: _Server())
 
 
 def _make_deps(
@@ -84,7 +82,7 @@ def _make_deps(
     vd.capture_runner = staticmethod(lambda url, viewport_width: b"PNG")
 
     if responsive_broken is not None:
-        from pipeline.graph.state import ResponsiveVerdict
+        from pipeline.builder.judges import ResponsiveVerdict
 
         async def rjudge(d, s, png):
             return ResponsiveVerdict(
@@ -179,7 +177,7 @@ async def test_responsive_ok_allows_match(tmp_path):
 
 async def test_responsive_suggestions_recorded(tmp_path):
     """Non-blocking suggestions are recorded and don't block a match."""
-    from pipeline.graph.state import ResponsiveSuggestion, ResponsiveVerdict
+    from pipeline.builder.judges import ResponsiveSuggestion, ResponsiveVerdict
 
     g = build_verify_graph()
     vd = _make_deps(tmp_path, match_after=1, sim=0.99, responsive_broken=False)

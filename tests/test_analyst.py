@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pydantic_ai.models.test import TestModel
 
-from pipeline.agents.analyst import build_analyst_agent, run_analyst
-from pipeline.models import (
+from pipeline.analyst.stage import build_analyst_agent, run_analyst
+from pipeline.analyst.models import (
     Asset,
     AssetStrategy,
     ColorToken,

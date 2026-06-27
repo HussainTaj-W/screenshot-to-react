@@ -19,10 +19,10 @@ from pathlib import Path
 
 from pydantic_ai import Agent, BinaryContent
 
-from ..deps import PipelineDeps
-from ..models import Requirements
-from .asset_extractor import realize_assets
-from .requirements_writer import write_requirements
+from ..core.deps import PipelineDeps
+from .models import Requirements
+from .assets import realize_assets
+from .writer import write_requirements
 
 DEFAULT_MODEL = "anthropic:claude-sonnet-4-6"
 
@@ -227,7 +227,7 @@ def _copy_supplied_assets(deps: PipelineDeps, requirements: Requirements) -> Non
     represented in the manifest (so the builder can reference them by name)."""
     import shutil
 
-    from ..models import Asset, AssetStrategy
+    from .models import Asset, AssetStrategy
 
     if not deps.supplemental_assets:
         return

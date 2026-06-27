@@ -11,15 +11,15 @@ import asyncio
 import sys
 from pathlib import Path
 
-from .deps import (
+from .core.config import ModelConfig
+from .core.deps import (
     DEFAULT_SIMILARITY_THRESHOLD,
     InputResolutionError,
-    ModelConfig,
     PipelineDeps,
 )
+from .core.preflight import PreflightError
+from .core.results import TerminalState
 from .orchestrator import run_pipeline
-from .preflight import PreflightError
-from .results import TerminalState
 
 
 def _load_env() -> None:
@@ -134,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
 
     import logging
 
-    from .logging_setup import configure_logging
+    from .core.logging import configure_logging
 
     configure_logging(logging.DEBUG if args.verbose else logging.INFO)
 

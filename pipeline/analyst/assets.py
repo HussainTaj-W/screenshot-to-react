@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..models import AssetStrategy, Requirements
+from .models import AssetStrategy, Requirements
 
 # Default placeholder size when the analyst doesn't specify one.
 _DEFAULT_W = 800
