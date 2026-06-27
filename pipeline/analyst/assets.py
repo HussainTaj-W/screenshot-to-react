@@ -50,16 +50,13 @@ def realize_assets(
 
 
 def _write_placeholder(path: Path, width: int, height: int, label: str) -> None:
-    """Write a neutral placeholder PNG of the given size with a centered label."""
+    """Write a neutral, borderless placeholder PNG with a centered label."""
     from PIL import Image, ImageDraw
 
     width = max(1, int(width))
     height = max(1, int(height))
     img = Image.new("RGB", (width, height), (228, 228, 231))  # neutral zinc-200
     draw = ImageDraw.Draw(img)
-
-    # Border so the placeholder reads as intentional.
-    draw.rectangle([0, 0, width - 1, height - 1], outline=(161, 161, 170), width=2)
 
     text = f"{label}\n{width}x{height}"
     # Centered multiline text (default bitmap font; no external font needed).

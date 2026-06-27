@@ -21,7 +21,7 @@ directly — there is no fixed output format; structure the code however a senio
 engineer would.
 
 Project facts:
-- It is a Vite + React 18 + Tailwind v4 project. lucide-react is installed.
+- It is a Vite + React 19 + Tailwind v4 project. lucide-react is installed.
 - The entry is src/main.jsx which imports './index.css' and './App.jsx'.
 - src/App.jsx MUST exist and default-export the root component composing the page.
 - src/index.css MUST exist and begin with `@import "tailwindcss";`.

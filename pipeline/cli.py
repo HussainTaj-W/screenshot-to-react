@@ -115,6 +115,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Disable the mobile responsive sanity check.",
     )
     p.add_argument(
+        "--site-id",
+        default=_env_default("NETLIFY_SITE_ID"),
+        help="Deploy to this existing Netlify site id (env: NETLIFY_SITE_ID). "
+        "If unset, reuses a prior deploy's site or creates a new one.",
+    )
+    p.add_argument(
         "--no-deploy",
         action="store_true",
         help="Run analyst + build/verify only; skip Netlify deployment.",
@@ -130,6 +136,12 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     _load_env()
+
+    # Optionally capture outgoing model requests for debugging provider errors.
+    from .core.debug_requests import enable_if_configured
+
+    enable_if_configured()
+
     args = _build_parser().parse_args(argv)
 
     import logging
@@ -164,6 +176,7 @@ def main(argv: list[str] | None = None) -> int:
             similarity_threshold=args.similarity_threshold,
             responsive_width=args.responsive_width,
             check_responsive=not args.no_responsive_check,
+            netlify_site_id=args.site_id,
             models=models,
         )
     except InputResolutionError as exc:

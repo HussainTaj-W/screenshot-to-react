@@ -17,6 +17,7 @@ Filesystem layout (siblings; scripts run from the repo root):
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -82,6 +83,12 @@ class PipelineDeps:
     # --- skills ---
     skills_dir: Path | None = None
 
+    # --- deploy ---
+    # An explicitly supplied Netlify site id to deploy to an existing site.
+    # When None, the deployer reuses the id persisted from a prior deploy, or
+    # creates a new site.
+    netlify_site_id: str | None = None
+
     # --- models (per-stage selection) ---
     models: ModelConfig = field(default_factory=ModelConfig)
 
@@ -103,6 +110,7 @@ class PipelineDeps:
         similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
         responsive_width: int = DEFAULT_RESPONSIVE_WIDTH,
         check_responsive: bool = True,
+        netlify_site_id: str | None = None,
         models: ModelConfig | None = None,
     ) -> "PipelineDeps":
         """Resolve inputs from the ``input/`` convention and ``--name``.
@@ -152,6 +160,11 @@ class PipelineDeps:
             else (top_dir / ".agents" / "skills")
         )
 
+        # Explicit arg wins over the NETLIFY_SITE_ID env var.
+        resolved_site_id = netlify_site_id or os.environ.get("NETLIFY_SITE_ID") or None
+        if resolved_site_id:
+            resolved_site_id = resolved_site_id.strip() or None
+
         return cls(
             instructions_path=instructions_path,
             references_dir=refs_dir,
@@ -168,6 +181,7 @@ class PipelineDeps:
             responsive_width=responsive_width,
             check_responsive=check_responsive,
             skills_dir=resolved_skills_dir if resolved_skills_dir.is_dir() else None,
+            netlify_site_id=resolved_site_id,
             models=models or ModelConfig(),
             top_dir=top_dir,
         )

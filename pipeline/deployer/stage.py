@@ -38,6 +38,17 @@ def _netlify_cmd() -> list[str]:
 
 
 def _read_site_id(deps: PipelineDeps) -> str | None:
+    """Resolve the Netlify site id to deploy to, in precedence order.
+
+    1. An explicitly supplied id (``deps.netlify_site_id``, from the
+       ``NETLIFY_SITE_ID`` env / ``--site-id`` flag), targeting an existing site.
+    2. The id persisted from a previous deploy of this project
+       (``<name>/.netlify/state.json``).
+    3. None -> Netlify creates a new site.
+    """
+    if deps.netlify_site_id:
+        return deps.netlify_site_id
+
     state = deps.netlify_state_path
     if state.is_file():
         try:
