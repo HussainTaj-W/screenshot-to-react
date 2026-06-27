@@ -37,20 +37,32 @@ class PreviewServer:
             self.process.kill()
 
 
-def start_preview(workdir: Path, *, ready_timeout: float = 30.0) -> PreviewServer:
+def start_preview(workdir: Path, *, ready_timeout: float = 60.0) -> PreviewServer:
     """Start ``vite preview`` on a free port and wait until it serves.
 
     Requires a prior successful production build (preview serves ``dist/``).
+    Binds explicitly to 127.0.0.1 so it works the same in a container.
     """
+    host = "127.0.0.1"
     port = _free_port()
     proc = subprocess.Popen(
-        ["npm", "run", "preview", "--", "--port", str(port), "--strictPort"],
+        [
+            "npm",
+            "run",
+            "preview",
+            "--",
+            "--host",
+            host,
+            "--port",
+            str(port),
+            "--strictPort",
+        ],
         cwd=workdir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
     )
-    url = f"http://127.0.0.1:{port}/"
+    url = f"http://{host}:{port}/"
     _wait_until_serving(url, proc, ready_timeout)
     return PreviewServer(process=proc, url=url)
 
@@ -59,11 +71,27 @@ def _wait_until_serving(url: str, proc: subprocess.Popen, timeout: float) -> Non
     deadline = time.time() + timeout
     while time.time() < deadline:
         if proc.poll() is not None:
-            raise RuntimeError("Preview server exited before becoming ready.")
+            out = _drain(proc)
+            raise RuntimeError(
+                "Preview server exited before becoming ready.\n" + out
+            )
         try:
             with urllib.request.urlopen(url, timeout=2) as resp:
                 if resp.status == 200:
                     return
         except (urllib.error.URLError, ConnectionError, OSError):
             time.sleep(0.4)
-    raise TimeoutError(f"Preview server did not become ready within {timeout}s.")
+    out = _drain(proc)
+    raise TimeoutError(
+        f"Preview server did not become ready within {timeout}s.\n" + out
+    )
+
+
+def _drain(proc: subprocess.Popen) -> str:
+    """Best-effort capture of the server's output for diagnostics."""
+    try:
+        proc.terminate()
+        out, _ = proc.communicate(timeout=5)
+        return (out or "").strip()[-2000:]
+    except Exception:  # noqa: BLE001
+        return "(no server output captured)"

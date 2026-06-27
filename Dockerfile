@@ -39,5 +39,15 @@ RUN uv sync --frozen
 # The Playwright base already has Chromium; ensure it's present for our venv.
 RUN uv run playwright install chromium
 
-# Run the pipeline. Pass flags/inputs via env (.env mounted) or `docker run` args.
+# Default the data paths to a /data mount convention. Mount the host project
+# tree (containing input/ and where the <name>/ output should land) at /data.
+# Secrets/models come from --env-file at runtime, NOT baked into the image.
+ENV PIPELINE_TOP=/data \
+    PIPELINE_INSTRUCTIONS=/data/input/instructions.md \
+    PIPELINE_REFERENCES_DIR=/data/input \
+    PIPELINE_SKILLS_DIR=/app/.agents/skills \
+    PIPELINE_NAME=mylanding
+
+# Run the pipeline from the baked code + venv (/app). Mount data at /data and
+# pass secrets via --env-file. Extra CLI flags go after the image name.
 ENTRYPOINT ["uv", "run", "screenshot-to-react"]

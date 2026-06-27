@@ -1,5 +1,9 @@
 # Keep the build context lean.
 .venv/
+# Never bake secrets into the image — pass .env at runtime (--env-file).
+.env
+.env.*
+!.env.example
 __pycache__/
 *.py[cod]
 .pytest_cache/
