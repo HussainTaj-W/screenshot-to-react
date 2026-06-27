@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pydantic_ai.models.test import TestModel
 
-from pipeline.analyst.stage import build_analyst_agent, run_analyst
 from pipeline.analyst.models import (
     Asset,
     AssetStrategy,
@@ -18,6 +17,7 @@ from pipeline.analyst.models import (
     ViewportInference,
     ViewportKind,
 )
+from pipeline.analyst.stage import build_analyst_agent, run_analyst
 
 
 async def test_analyst_writes_requirement_files(deps):
@@ -44,9 +44,7 @@ async def test_analyst_records_viewport_on_deps(deps, monkeypatch):
 
     fixed = Requirements(
         summary="A hero + CTA landing page.",
-        viewport=ViewportInference(
-            kind=ViewportKind.DESKTOP, width=1440, rationale="wide capture"
-        ),
+        viewport=ViewportInference(kind=ViewportKind.DESKTOP, width=1440, rationale="wide capture"),
         responsive=[
             ResponsiveRule(
                 breakpoint="mobile (<768px)",
@@ -112,9 +110,7 @@ async def test_assumption_ledger_tagged(deps):
         summary="x",
         viewport=ViewportInference(kind=ViewportKind.DESKTOP, width=1280, rationale="r"),
         responsive=[
-            ResponsiveRule(
-                breakpoint="mobile", behavior="stack", provenance=Provenance.ASSUMED
-            )
+            ResponsiveRule(breakpoint="mobile", behavior="stack", provenance=Provenance.ASSUMED)
         ],
     )
     agent = build_analyst_agent(model=TestModel(custom_output_args=fixed))

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from pipeline.core.deps import InputResolutionError, PipelineDeps
-from pipeline.core.preflight import _node_major_version, check_node, PreflightError
+from pipeline.core.preflight import PreflightError, _node_major_version, check_node
 
 
 def test_resolve_from_convention(sample_inputs):

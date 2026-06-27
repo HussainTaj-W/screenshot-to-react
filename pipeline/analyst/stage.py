@@ -20,8 +20,8 @@ from pathlib import Path
 from pydantic_ai import Agent, BinaryContent
 
 from ..core.deps import PipelineDeps
-from .models import Requirements
 from .assets import realize_assets
+from .models import Requirements
 from .writer import write_requirements
 
 DEFAULT_MODEL = "anthropic:claude-sonnet-4-6"
@@ -168,11 +168,7 @@ async def analyze(
         )
         for p in deps.supplemental_assets:
             prompt.append(f"Filename: {p.name}")
-            prompt.append(
-                BinaryContent(
-                    data=p.read_bytes(), media_type=_screenshot_media_type(p)
-                )
-            )
+            prompt.append(BinaryContent(data=p.read_bytes(), media_type=_screenshot_media_type(p)))
 
     result = await agent.run(prompt)
     return result.output
@@ -197,13 +193,12 @@ async def run_analyst(
     # (the LLM can misjudge it from a tall full-page capture). Clamp the inferred
     # width to the actual image width so the build is rendered/compared fairly.
     actual_width = _screenshot_pixel_width(deps.reference_screenshot)
-    if actual_width is not None:
-        if requirements.viewport.width != actual_width:
-            requirements.viewport.rationale += (
-                f" [Capture width overridden to the screenshot's actual width "
-                f"{actual_width}px (LLM inferred {requirements.viewport.width}px).]"
-            )
-            requirements.viewport.width = actual_width
+    if actual_width is not None and requirements.viewport.width != actual_width:
+        requirements.viewport.rationale += (
+            f" [Capture width overridden to the screenshot's actual width "
+            f"{actual_width}px (LLM inferred {requirements.viewport.width}px).]"
+        )
+        requirements.viewport.width = actual_width
 
     # Record inferred viewport width on the shared deps for the capture step.
     deps.reference_viewport_width = requirements.viewport.width

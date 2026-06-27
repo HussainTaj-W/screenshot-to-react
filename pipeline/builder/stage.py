@@ -120,8 +120,7 @@ def _available_assets_listing(assets_dir, requirements_dir) -> str:
     for f in files:
         lines.append(f"- /{f.name}")
     lines.append(
-        "\nSee the `assets.md` manifest above for what each file depicts and "
-        "where it belongs."
+        "\nSee the `assets.md` manifest above for what each file depicts and where it belongs."
     )
     return "\n".join(lines)
 
@@ -142,9 +141,7 @@ def make_verify_deps(
         workdir=deps.workdir,
         capabilities=list(skills_capabilities) if skills_capabilities else None,
     )
-    fix_agent = build_fix_build_agent(
-        deps.models.fix_build_model, workdir=deps.workdir
-    )
+    fix_agent = build_fix_build_agent(deps.models.fix_build_model, workdir=deps.workdir)
     judge_agent = build_judge_agent(deps.models.judge_model)
     responsive_judge_agent = build_responsive_judge_agent(deps.models.judge_model)
 
@@ -189,9 +186,10 @@ def make_verify_deps(
                 for d in state.latest_verdict.discrepancies
                 if not _is_pure_placeholder_complaint(d.issue)
             ]
-            disc = "\n".join(
-                f"- {d.region} [{d.severity.value}]: {d.issue}" for d in actionable
-            ) or "- (no actionable layout issues; keep current placeholders as-is)"
+            disc = (
+                "\n".join(f"- {d.region} [{d.severity.value}]: {d.issue}" for d in actionable)
+                or "- (no actionable layout issues; keep current placeholders as-is)"
+            )
             prompt += [
                 "Placeholder images are intentional stand-ins (correct size/"
                 "position), not defects — they'll be replaced with real assets "
@@ -206,9 +204,7 @@ def make_verify_deps(
             # harm the desktop fidelity match.
             suggestions = getattr(state, "last_responsive_suggestions", [])
             if suggestions:
-                sug = "\n".join(
-                    f"- [{s.region}] {s.suggestion}" for s in suggestions
-                )
+                sug = "\n".join(f"- [{s.region}] {s.suggestion}" for s in suggestions)
                 prompt += [
                     "OPTIONAL mobile-responsive improvements (apply if they don't "
                     "harm the desktop layout; these do not block success):",
@@ -274,9 +270,7 @@ async def run_build_verify(
     Per-stage models come from ``deps.models``. ``verify_deps`` may be injected
     by tests to supply stub callables.
     """
-    vdeps = verify_deps or make_verify_deps(
-        deps, skills_capabilities=skills_capabilities
-    )
+    vdeps = verify_deps or make_verify_deps(deps, skills_capabilities=skills_capabilities)
     graph = build_verify_graph()
     state = VerifyState(
         build_cap=deps.build_cap,

@@ -66,9 +66,7 @@ def _create_vite_base(workdir: Path) -> None:
     if proc.returncode != 0 or not (tmp_dir / "package.json").is_file():
         if tmp_dir.exists():
             shutil.rmtree(tmp_dir, ignore_errors=True)
-        raise ScaffoldError(
-            "npm create vite failed:\n" + (proc.stderr or proc.stdout).strip()
-        )
+        raise ScaffoldError("npm create vite failed:\n" + (proc.stderr or proc.stdout).strip())
 
     # Move scaffolded contents into workdir, then drop the temp dir.
     for item in tmp_dir.iterdir():
@@ -117,8 +115,7 @@ def _reset_entry_files(workdir: Path) -> None:
 
     (src / "index.css").write_text('@import "tailwindcss";\n')
     (src / "App.jsx").write_text(
-        "export default function App() {\n"
-        '  return <main className="min-h-screen" />\n}\n'
+        'export default function App() {\n  return <main className="min-h-screen" />\n}\n'
     )
     app_css = src / "App.css"
     if app_css.exists():

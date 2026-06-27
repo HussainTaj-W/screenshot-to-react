@@ -10,7 +10,7 @@ The verdict models live here, alongside the judges that produce them.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, BinaryContent
@@ -22,7 +22,7 @@ from ..core.config import DEFAULT_MODEL
 # --------------------------------------------------------------------------- #
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     MINOR = "minor"
     MAJOR = "major"
     BLOCKER = "blocker"
@@ -137,9 +137,7 @@ def build_judge_agent(model: str | None = None) -> Agent:
             if isinstance(msg, ModelRequest):
                 for part in msg.parts:
                     if isinstance(part, UserPromptPart) and isinstance(part.content, list):
-                        part.content = [
-                            c for c in part.content if not isinstance(c, BinaryContent)
-                        ]
+                        part.content = [c for c in part.content if not isinstance(c, BinaryContent)]
         return trimmed
 
     return Agent(

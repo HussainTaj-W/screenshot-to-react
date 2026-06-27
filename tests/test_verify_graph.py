@@ -70,9 +70,7 @@ def _make_deps(
         return VisualVerdict(
             matches=counter["judge"] >= match_after,
             similarity=sim,
-            discrepancies=[
-                Discrepancy(region="hero", issue="too light", severity=Severity.MAJOR)
-            ],
+            discrepancies=[Discrepancy(region="hero", issue="too light", severity=Severity.MAJOR)],
         )
 
     vd.generate_app = gen
@@ -88,8 +86,11 @@ def _make_deps(
             return ResponsiveVerdict(
                 broken=responsive_broken,
                 issues=(
-                    [Discrepancy(region="page", issue="horizontal overflow",
-                                 severity=Severity.MAJOR)]
+                    [
+                        Discrepancy(
+                            region="page", issue="horizontal overflow", severity=Severity.MAJOR
+                        )
+                    ]
                     if responsive_broken
                     else []
                 ),
@@ -185,9 +186,7 @@ async def test_responsive_suggestions_recorded(tmp_path):
     async def rjudge(d, s, png):
         return ResponsiveVerdict(
             broken=False,
-            suggestions=[
-                ResponsiveSuggestion(region="nav", suggestion="larger tap targets")
-            ],
+            suggestions=[ResponsiveSuggestion(region="nav", suggestion="larger tap targets")],
         )
 
     vd.responsive_judge = rjudge

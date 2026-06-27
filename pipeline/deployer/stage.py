@@ -83,9 +83,7 @@ async def run_deploy(
     """
     # 5.4: refuse to deploy only when the app does not build.
     if not build_verify.deployable:
-        return DeployOutcome(
-            deployed=False, message="App does not build; refusing to deploy."
-        )
+        return DeployOutcome(deployed=False, message="App does not build; refusing to deploy.")
 
     # 5.2: require auth token, fail loudly.
     token = os.environ.get("NETLIFY_AUTH_TOKEN")

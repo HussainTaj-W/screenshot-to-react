@@ -99,8 +99,7 @@ def ensure_playwright_browsers() -> bool:
         from playwright.sync_api import sync_playwright
     except ImportError as exc:  # pragma: no cover - dependency guaranteed by uv
         raise PreflightError(
-            "The 'playwright' Python package is not installed. "
-            "Run `uv add playwright`."
+            "The 'playwright' Python package is not installed. Run `uv add playwright`."
         ) from exc
 
     # Probe: can we launch chromium headless?
@@ -117,9 +116,8 @@ def ensure_playwright_browsers() -> bool:
             proc = _run(["python", "-m", "playwright", "install", "chromium"])
         if proc.returncode != 0:
             raise PreflightError(
-                "Failed to install the Playwright Chromium browser.\n"
-                f"stderr: {proc.stderr.strip()}"
-            )
+                f"Failed to install the Playwright Chromium browser.\nstderr: {proc.stderr.strip()}"
+            ) from None
         return True
 
 
@@ -146,8 +144,7 @@ def ensure_netlify_cli() -> bool:
     proc = _run([npm, "install", "netlify-cli", "--no-save", "--no-audit", "--no-fund"])
     if proc.returncode != 0:
         raise PreflightError(
-            "Failed to install the Netlify CLI via npm.\n"
-            f"stderr: {proc.stderr.strip()}"
+            f"Failed to install the Netlify CLI via npm.\nstderr: {proc.stderr.strip()}"
         )
     return True
 
@@ -173,9 +170,7 @@ def run_preflight(
     result.already_present.append("node")
 
     if _which("npm") is None:
-        raise PreflightError(
-            "npm was not found on PATH. Ensure your Node.js install includes npm."
-        )
+        raise PreflightError("npm was not found on PATH. Ensure your Node.js install includes npm.")
     result.already_present.append("npm")
 
     # 2. Playwright browsers (safe to auto-install).

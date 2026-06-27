@@ -95,9 +95,7 @@ async def run_pipeline(
         deps.visual_cap,
         deps.similarity_threshold,
     )
-    build_verify: BuildVerifyOutcome = await run_build_verify(
-        deps, skills_capabilities=skills_caps
-    )
+    build_verify: BuildVerifyOutcome = await run_build_verify(deps, skills_capabilities=skills_caps)
     log.info(
         "Builder/Verifier done: built=%s matched=%s similarity=%s "
         "(build_fixes=%d, visual_fixes=%d)",
@@ -129,11 +127,7 @@ async def run_pipeline(
     if not deploy:
         log.info("Deploy disabled (--no-deploy); stopping after local build/verify.")
         # Local-only run (e.g. smoke test): no deployment attempted.
-        state = (
-            TerminalState.SUCCESS
-            if build_verify.matched
-            else TerminalState.DEPLOYED_WITH_GAPS
-        )
+        state = TerminalState.SUCCESS if build_verify.matched else TerminalState.DEPLOYED_WITH_GAPS
         return PipelineResult(
             terminal_state=state,
             name=deps.name,
@@ -158,17 +152,10 @@ async def run_pipeline(
             name=deps.name,
             build_verify=build_verify,
             deploy=deploy_outcome,
-            message=(
-                "Build succeeded but deployment failed: "
-                f"{deploy_outcome.message}"
-            ),
+            message=(f"Build succeeded but deployment failed: {deploy_outcome.message}"),
         )
 
-    state = (
-        TerminalState.SUCCESS
-        if build_verify.matched
-        else TerminalState.DEPLOYED_WITH_GAPS
-    )
+    state = TerminalState.SUCCESS if build_verify.matched else TerminalState.DEPLOYED_WITH_GAPS
     return PipelineResult(
         terminal_state=state,
         name=deps.name,

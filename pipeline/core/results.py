@@ -13,10 +13,10 @@ The pipeline distinguishes three terminal states (see spec
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 
-class TerminalState(str, Enum):
+class TerminalState(StrEnum):
     SUCCESS = "success"
     DEPLOYED_WITH_GAPS = "deployed_with_gaps"
     BUILD_FAILED = "build_failed"

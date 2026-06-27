@@ -8,9 +8,9 @@ browser, or LLM for the builder). Confirms the three terminal states.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 
 import pytest
+from pydantic_ai.models.test import TestModel
 
 from pipeline.analyst import stage as analyst_mod
 from pipeline.analyst.models import (
@@ -25,7 +25,6 @@ from pipeline.core import preview as preview_mod
 from pipeline.core import scaffold as scaffold_mod
 from pipeline.core.results import TerminalState
 from pipeline.orchestrator import run_pipeline
-from pydantic_ai.models.test import TestModel
 
 
 @dataclass
@@ -42,9 +41,7 @@ def _patch_everything(monkeypatch):
     # Analyst: deterministic requirements with a known viewport.
     fixed = Requirements(
         summary="Acme landing.",
-        viewport=ViewportInference(
-            kind=ViewportKind.DESKTOP, width=1440, rationale="wide"
-        ),
+        viewport=ViewportInference(kind=ViewportKind.DESKTOP, width=1440, rationale="wide"),
     )
 
     real_build_agent = analyst_mod.build_analyst_agent

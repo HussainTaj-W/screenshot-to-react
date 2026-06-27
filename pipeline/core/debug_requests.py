@@ -8,6 +8,7 @@ was sent on a failing request without flooding the log with megabytes of base64.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 from pathlib import Path
@@ -60,10 +61,8 @@ def enable(dump_path: Path | str = DEFAULT_DUMP_PATH) -> None:
             record["status"] = response.status_code
             if response.status_code >= 400:
                 # Read the error body so we can correlate request <-> error.
-                try:
+                with contextlib.suppress(Exception):
                     record["error_body"] = (await response.aread()).decode()[:1000]
-                except Exception:  # noqa: BLE001
-                    pass
             _append(path, record)
             return response
         return await orig_send(self, request, **kwargs)

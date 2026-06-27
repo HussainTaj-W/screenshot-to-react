@@ -142,9 +142,7 @@ def _write_visual(r: Requirements, d: Path) -> Path:
     lines = ["# Visual Requirements", ""]
     lines.append("## Viewport")
     lines.append("")
-    lines.append(
-        f"- Inferred: **{r.viewport.kind.value}** at **{r.viewport.width}px**"
-    )
+    lines.append(f"- Inferred: **{r.viewport.kind.value}** at **{r.viewport.width}px**")
     lines.append(f"- Rationale: {r.viewport.rationale}")
     lines.append("")
     lines.append("## Palette")
@@ -189,8 +187,7 @@ def _write_responsive(r: Requirements, d: Path) -> Path:
     if r.responsive:
         for rule in r.responsive:
             lines.append(
-                f"- **{rule.breakpoint}** ({_provenance_tag(rule.provenance)}): "
-                f"{rule.behavior}"
+                f"- **{rule.breakpoint}** ({_provenance_tag(rule.provenance)}): {rule.behavior}"
             )
     else:
         lines.append("- (none recorded)")
@@ -277,8 +274,7 @@ def _write_assets_manifest(r: Requirements, d: Path) -> Path:
         size = f"{a.width}x{a.height}" if (a.width and a.height) else ""
         gap = "yes" if a.is_gap else ""
         lines.append(
-            f"| {a.name} | {a.strategy.value} | {a.file or ''} | {size} | "
-            f"{a.description} | {gap} |"
+            f"| {a.name} | {a.strategy.value} | {a.file or ''} | {size} | {a.description} | {gap} |"
         )
     if not r.assets:
         lines.append("| (none) | | | | | |")

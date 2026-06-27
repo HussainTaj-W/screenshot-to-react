@@ -7,35 +7,34 @@ judge verdict models live separately in ``pipeline.builder.judges``.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
-
 
 # --------------------------------------------------------------------------- #
 # Enums
 # --------------------------------------------------------------------------- #
 
 
-class Provenance(str, Enum):
+class Provenance(StrEnum):
     """Whether a detail is evidenced by the screenshot or inferred."""
 
     EVIDENCED = "evidenced"  # directly visible in the screenshot
     ASSUMED = "assumed"  # inferred beyond the screenshot (must be auditable)
 
 
-class AssetStrategy(str, Enum):
+class AssetStrategy(StrEnum):
     RECREATE = "recreate"  # reproduce in CSS/SVG
     PLACEHOLDER = "placeholder"  # marked stand-in (builder may use external image)
     SUPPLIED = "supplied"  # a real user-provided file from the references dir
 
 
-class FidelityRulingWinner(str, Enum):
+class FidelityRulingWinner(StrEnum):
     FIDELITY = "fidelity"  # reproduce the screenshot exactly
     ACCESSIBILITY = "accessibility"  # correct/accessible, accept divergence
 
 
-class ViewportKind(str, Enum):
+class ViewportKind(StrEnum):
     MOBILE = "mobile"
     TABLET = "tablet"
     DESKTOP = "desktop"

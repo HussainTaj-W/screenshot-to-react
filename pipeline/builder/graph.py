@@ -190,9 +190,7 @@ def build_verify_graph():
             mobile_png = None
             if deps.check_responsive and deps.responsive_judge is not None:
                 log.info("  capture @ %dpx (mobile responsive)...", deps.responsive_width)
-                mobile_png = deps.capture_runner(
-                    server.url, viewport_width=deps.responsive_width
-                )
+                mobile_png = deps.capture_runner(server.url, viewport_width=deps.responsive_width)
                 if inspect.isawaitable(mobile_png):
                     mobile_png = await mobile_png
         finally:
@@ -250,15 +248,17 @@ def build_verify_graph():
         is_match = fidelity_ok and not responsive_broken
         if is_match:
             state.matched = True
-            log.info("  MATCH reached (similarity %.2f >= T %.2f, responsive OK)",
-                     verdict.similarity, state.similarity_threshold)
+            log.info(
+                "  MATCH reached (similarity %.2f >= T %.2f, responsive OK)",
+                verdict.similarity,
+                state.similarity_threshold,
+            )
             return JudgeMatched()
         if fidelity_ok and responsive_broken:
             log.info("  fidelity OK but mobile layout is broken -> needs fix")
         if state.visual_attempts < state.visual_cap:
             return JudgeNeedsFix()
-        log.info("  visual-fix budget (%d) exhausted -> emitting gaps report",
-                 state.visual_cap)
+        log.info("  visual-fix budget (%d) exhausted -> emitting gaps report", state.visual_cap)
         return JudgeExhausted()
 
     # --- FIX_VISUAL ----------------------------------------------------------

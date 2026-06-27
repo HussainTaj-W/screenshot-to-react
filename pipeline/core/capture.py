@@ -7,9 +7,7 @@ asyncio event loop (the sync API raises inside a running loop).
 from __future__ import annotations
 
 
-async def capture_page_async(
-    url: str, *, viewport_width: int, viewport_height: int = 900
-) -> bytes:
+async def capture_page_async(url: str, *, viewport_width: int, viewport_height: int = 900) -> bytes:
     """Navigate to ``url`` and return a full-page PNG screenshot (async)."""
     from playwright.async_api import async_playwright
 
@@ -36,9 +34,7 @@ def capture_page(url: str, *, viewport_width: int, viewport_height: int = 900) -
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         try:
-            page = browser.new_page(
-                viewport={"width": viewport_width, "height": viewport_height}
-            )
+            page = browser.new_page(viewport={"width": viewport_width, "height": viewport_height})
             page.goto(url, wait_until="networkidle")
             page.wait_for_timeout(400)
             return page.screenshot(full_page=True)

@@ -112,7 +112,7 @@ class PipelineDeps:
         check_responsive: bool = True,
         netlify_site_id: str | None = None,
         models: ModelConfig | None = None,
-    ) -> "PipelineDeps":
+    ) -> PipelineDeps:
         """Resolve inputs from the ``input/`` convention and ``--name``.
 
         - Inputs default to ``<top>/input/instructions.md`` and
@@ -125,15 +125,9 @@ class PipelineDeps:
         base_input = Path(input_dir).resolve() if input_dir else (top_dir / "input")
 
         instructions_path = (
-            Path(instructions).resolve()
-            if instructions
-            else (base_input / "instructions.md")
+            Path(instructions).resolve() if instructions else (base_input / "instructions.md")
         )
-        refs_dir = (
-            Path(references_dir).resolve()
-            if references_dir
-            else (base_input / "references")
-        )
+        refs_dir = Path(references_dir).resolve() if references_dir else (base_input / "references")
 
         if not instructions_path.is_file():
             raise InputResolutionError(
@@ -155,9 +149,7 @@ class PipelineDeps:
         dist_dir = workdir / "dist"
 
         resolved_skills_dir = (
-            Path(skills_dir).resolve()
-            if skills_dir
-            else (top_dir / ".agents" / "skills")
+            Path(skills_dir).resolve() if skills_dir else (top_dir / ".agents" / "skills")
         )
 
         # Explicit arg wins over the NETLIFY_SITE_ID env var.
@@ -205,18 +197,14 @@ class PipelineDeps:
 def _all_images(references_dir: Path) -> list[Path]:
     """Images directly in the references directory (top level only)."""
     return sorted(
-        p
-        for p in references_dir.iterdir()
-        if p.is_file() and p.suffix.lower() in _SCREENSHOT_EXTS
+        p for p in references_dir.iterdir() if p.is_file() and p.suffix.lower() in _SCREENSHOT_EXTS
     )
 
 
 def _all_images_recursive(references_dir: Path) -> list[Path]:
     """All images under the references directory, including subfolders."""
     return sorted(
-        p
-        for p in references_dir.rglob("*")
-        if p.is_file() and p.suffix.lower() in _SCREENSHOT_EXTS
+        p for p in references_dir.rglob("*") if p.is_file() and p.suffix.lower() in _SCREENSHOT_EXTS
     )
 
 

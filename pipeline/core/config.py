@@ -36,7 +36,7 @@ class ModelConfig:
     judge: str | None = None  # vision discrimination
 
     @classmethod
-    def from_env(cls, env: dict[str, str] | None = None) -> "ModelConfig":
+    def from_env(cls, env: dict[str, str] | None = None) -> ModelConfig:
         """Build a config from environment variables (empty values ignored)."""
         src = env if env is not None else os.environ
 

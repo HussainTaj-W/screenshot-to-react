@@ -75,7 +75,9 @@ def _write_placeholder(path: Path, width: int, height: int, label: str) -> None:
 
 
 def _safe(name: str) -> str:
-    return "".join(c if c.isalnum() or c in "-_" else "-" for c in name.lower()).strip("-") or "asset"
+    return (
+        "".join(c if c.isalnum() or c in "-_" else "-" for c in name.lower()).strip("-") or "asset"
+    )
 
 
 def _ext_for(asset) -> str:
