@@ -1,0 +1,33 @@
+[project]
+name = "screenshot-to-react"
+version = "0.1.0"
+description = "Agentic pipeline that recreates a landing page from a reference screenshot as a deployed React app."
+requires-python = ">=3.11"
+dependencies = [
+    "pillow>=12.2.0",
+    "playwright>=1.60.0",
+    "pydantic-ai-skills>=0.11.0",
+    "pydantic-ai-slim[anthropic,openai]>=2.0.0",
+    "pydantic-graph>=2.0.0",
+    "python-dotenv>=1.2.2",
+]
+
+[project.scripts]
+screenshot-to-react = "pipeline.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pipeline"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]

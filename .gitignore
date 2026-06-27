@@ -1,0 +1,16 @@
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Node (generated app)
+node_modules/
+dist/
+.netlify/
+
+# Env
+.env
+.env.*
+!.env.example
