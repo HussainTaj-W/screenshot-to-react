@@ -16,3 +16,4 @@ debug_requests.jsonl
 run.log
 # Generated output projects are mounted at runtime, not baked in.
 mylanding/
+generated-app/

@@ -8,7 +8,7 @@ dependencies = [
     "playwright>=1.60.0",
     "pydantic-ai-harness>=0.4.0",
     "pydantic-ai-skills>=0.11.0",
-    "pydantic-ai-slim[anthropic,openai]>=2.0.0",
+    "pydantic-ai-slim[anthropic,openai,google]>=2.0.0",
     "pydantic-graph>=2.0.0",
     "python-dotenv>=1.2.2",
 ]
