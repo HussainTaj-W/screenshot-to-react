@@ -53,6 +53,7 @@
 - [x] 4.9 Implement exit conditions: match (`similarity>=T`, independent of the judge's boolean so placeholders don't block) -> success; budget exhausted -> emit `gaps_report.md`
 - [x] 4.9a Instruct the judge to treat placeholders as expected (no discrepancy/similarity penalty); filter pure placeholder complaints out of the builder's fix instructions and tell it to keep placeholders
 - [x] 4.9b Add lucide-react to the scaffold; analyst enumerates visible icons; builder renders icons via the library instead of text substitutes
+- [x] 4.9c Responsive sanity check: capture at a mobile width (default 375px) and run a vision judge (no reference); objective breakage blocks the match and feeds the fix loop, subjective notes advisory; configurable via PIPELINE_RESPONSIVE_WIDTH / --responsive-width / --no-responsive-check
 - [x] 4.10 Wire judge similarity threshold `T` as configuration
 
 ## 5. Deployer agent (netlify-deploy)

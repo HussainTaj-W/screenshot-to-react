@@ -43,7 +43,9 @@ def _stub_scaffold(monkeypatch):
     monkeypatch.setattr(scaffold_mod, "start_preview", lambda wd: _Server())
 
 
-def _make_deps(tmp: Path, *, build_ok=True, match_after=1, sim=0.99) -> VerifyDeps:
+def _make_deps(
+    tmp: Path, *, build_ok=True, match_after=1, sim=0.99, responsive_broken=None
+) -> VerifyDeps:
     (tmp / "src").mkdir(parents=True, exist_ok=True)
     (tmp / "src" / "App.jsx").write_text("export default () => null")
     (tmp / "src" / "index.css").write_text('@import "tailwindcss";')
@@ -79,6 +81,24 @@ def _make_deps(tmp: Path, *, build_ok=True, match_after=1, sim=0.99) -> VerifyDe
     vd.judge = judge
     vd.build_runner = staticmethod(lambda wd: _FakeBuildResult(build_ok))
     vd.capture_runner = staticmethod(lambda url, viewport_width: b"PNG")
+
+    if responsive_broken is not None:
+        from pipeline.graph.state import ResponsiveVerdict
+
+        async def rjudge(d, s, png):
+            return ResponsiveVerdict(
+                broken=responsive_broken,
+                issues=(
+                    [Discrepancy(region="page", issue="horizontal overflow",
+                                 severity=Severity.MAJOR)]
+                    if responsive_broken
+                    else []
+                ),
+            )
+
+        vd.responsive_judge = rjudge
+    else:
+        vd.check_responsive = False
     return vd
 
 
@@ -134,3 +154,46 @@ async def test_build_failure_hard_stop(tmp_path):
     out = await g.run(inputs=None, state=st, deps=vd)
     assert not out.built
     assert out.build_attempts_used == 2
+
+
+async def test_responsive_broken_blocks_match(tmp_path):
+    """Fidelity OK but mobile is objectively broken -> not a match, fixes run."""
+    g = build_verify_graph()
+    vd = _make_deps(tmp_path, match_after=1, sim=0.99, responsive_broken=True)
+    st = VerifyState(build_cap=1, visual_cap=2, similarity_threshold=0.95)
+    out = await g.run(inputs=None, state=st, deps=vd)
+    assert not out.matched  # blocked by mobile breakage
+    assert out.visual_attempts_used == 2  # exhausted trying to fix
+
+
+async def test_responsive_ok_allows_match(tmp_path):
+    """Fidelity OK and mobile sane -> match."""
+    g = build_verify_graph()
+    vd = _make_deps(tmp_path, match_after=1, sim=0.99, responsive_broken=False)
+    st = VerifyState(build_cap=1, visual_cap=3, similarity_threshold=0.95)
+    out = await g.run(inputs=None, state=st, deps=vd)
+    assert out.matched
+    assert out.visual_attempts_used == 0
+
+
+async def test_responsive_suggestions_recorded(tmp_path):
+    """Non-blocking suggestions are recorded and don't block a match."""
+    from pipeline.graph.state import ResponsiveSuggestion, ResponsiveVerdict
+
+    g = build_verify_graph()
+    vd = _make_deps(tmp_path, match_after=1, sim=0.99, responsive_broken=False)
+
+    async def rjudge(d, s, png):
+        return ResponsiveVerdict(
+            broken=False,
+            suggestions=[
+                ResponsiveSuggestion(region="nav", suggestion="larger tap targets")
+            ],
+        )
+
+    vd.responsive_judge = rjudge
+    st = VerifyState(build_cap=1, visual_cap=3, similarity_threshold=0.95)
+    out = await g.run(inputs=None, state=st, deps=vd)
+    assert out.matched  # suggestions never block
+    assert st.last_responsive_suggestions
+    assert any("larger tap targets" in f for f in st.quality_findings)

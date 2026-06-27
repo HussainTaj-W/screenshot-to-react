@@ -171,3 +171,46 @@ def build_judge_agent(model: str | None = None):
         instructions=JUDGE_INSTRUCTIONS,
         capabilities=[ProcessHistory(trim_images)],
     )
+
+
+# --------------------------------------------------------------------------- #
+# Responsive sanity judge (mobile) — no reference, judged on its own merits
+# --------------------------------------------------------------------------- #
+
+RESPONSIVE_JUDGE_INSTRUCTIONS = """\
+You are a responsive-design QA judge. You are given a screenshot of the build
+captured at a MOBILE viewport width. There is NO reference image for this width —
+judge the layout ON ITS OWN MERITS for whether it is a sane, usable mobile
+layout, plus whether it is consistent with the DOCUMENTED RESPONSIVE ASSUMPTIONS
+provided.
+
+Separate OBJECTIVE BREAKAGE from SUGGESTIONS:
+- OBJECTIVE BREAKAGE (set broken=true and list under issues): horizontal
+  overflow / a horizontal scrollbar, any element or content wider than the
+  viewport, text overflowing or clipped out of its container, elements
+  overlapping so content is unreadable, or a layout that is clearly shattered.
+- SUGGESTIONS (non-blocking improvements; never set broken for these): concrete,
+  actionable ideas to make the mobile layout better — e.g. "increase tap target
+  size on the nav", "stack the product grid to a single column", "add vertical
+  spacing between cards", "reduce hero headline size on mobile". Each suggestion
+  has a region and an actionable instruction.
+
+Placeholder gray images are EXPECTED — never treat a placeholder as breakage.
+
+Return:
+- broken: true ONLY if there is objective breakage as defined above.
+- issues: concrete objective problems to fix (region, issue, severity), only
+  when broken.
+- suggestions: actionable, non-blocking improvements (region + suggestion).
+"""
+
+
+def build_responsive_judge_agent(model: str | None = None):
+    """Construct the mobile responsive sanity judge (no reference image)."""
+    from ..graph.state import ResponsiveVerdict
+
+    return Agent(
+        model or DEFAULT_MODEL,
+        output_type=ResponsiveVerdict,
+        instructions=RESPONSIVE_JUDGE_INSTRUCTIONS,
+    )

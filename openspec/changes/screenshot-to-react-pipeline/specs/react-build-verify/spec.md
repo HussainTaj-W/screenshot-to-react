@@ -83,7 +83,26 @@ A vision LLM judge SHALL compare the captured screenshot to the reference and re
 
 #### Scenario: Out-of-scope behavior ignored
 - **WHEN** responsive behavior at a non-reference width differs from an assumption
-- **THEN** the judge does not flag it as a discrepancy
+- **THEN** the fidelity judge does not flag it as a discrepancy
+
+### Requirement: Check responsive sanity at a mobile viewport
+Because no reference screenshot exists for non-reference viewports, the loop SHALL evaluate responsiveness by capturing the built page at a mobile width (default 375px) and asking a vision judge whether the layout is a sane, non-broken responsive layout consistent with the documented responsive assumptions. The responsive verdict SHALL distinguish objective breakage (a hard `broken` signal: horizontal overflow, content/elements wider than the viewport, overlapping or clipped content) from non-blocking structured suggestions (region + actionable improvement). Objective breakage SHALL block a match and SHALL be added to the discrepancies the builder must fix. Suggestions SHALL NOT block a match; they SHALL be recorded and offered to the builder as optional improvements on a subsequent fix pass.
+
+#### Scenario: Mobile layout is broken
+- **WHEN** the mobile capture shows objective breakage (e.g. horizontal overflow or an element wider than the viewport)
+- **THEN** the responsive verdict marks it broken, it blocks a match, and the breakage is added to the builder's fix discrepancies
+
+#### Scenario: Mobile layout is sane
+- **WHEN** the mobile capture is a sane responsive layout with no objective breakage
+- **THEN** responsiveness does not block a match
+
+#### Scenario: Responsive suggestions offered
+- **WHEN** the responsive judge returns non-blocking improvement suggestions
+- **THEN** the suggestions are recorded and offered to the builder as optional improvements without blocking the match
+
+#### Scenario: Responsive assumptions honored
+- **WHEN** the requirements document responsive assumptions (e.g. nav collapses, columns stack)
+- **THEN** the responsive judge evaluates the mobile capture against those assumptions
 
 ### Requirement: Bound the visual fix loop
 The verify loop SHALL allow an initial build plus up to 3 visual fix attempts. On each fix the builder SHALL receive the reference, the discrepancies, and its own last screenshot, and SHALL be instructed to modify only flagged regions. When the visual budget is exhausted without a match, the loop SHALL emit a gaps report and allow deployment of the best attempt.

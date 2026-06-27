@@ -104,6 +104,17 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Judge similarity threshold T for a match.",
     )
     p.add_argument(
+        "--responsive-width",
+        type=int,
+        default=int(_env_default("PIPELINE_RESPONSIVE_WIDTH") or 375),
+        help="Mobile width for the responsive sanity check (env: PIPELINE_RESPONSIVE_WIDTH).",
+    )
+    p.add_argument(
+        "--no-responsive-check",
+        action="store_true",
+        help="Disable the mobile responsive sanity check.",
+    )
+    p.add_argument(
         "--no-deploy",
         action="store_true",
         help="Run analyst + build/verify only; skip Netlify deployment.",
@@ -151,6 +162,8 @@ def main(argv: list[str] | None = None) -> int:
             build_cap=args.build_cap,
             visual_cap=args.visual_cap,
             similarity_threshold=args.similarity_threshold,
+            responsive_width=args.responsive_width,
+            check_responsive=not args.no_responsive_check,
             models=models,
         )
     except InputResolutionError as exc:

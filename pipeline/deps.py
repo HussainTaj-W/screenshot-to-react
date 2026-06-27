@@ -37,6 +37,9 @@ DEFAULT_SIMILARITY_THRESHOLD = 0.95
 # Default viewport width used only when the analyst has not yet inferred one.
 DEFAULT_VIEWPORT_WIDTH = 1280
 
+# Default mobile width for the responsive sanity check.
+DEFAULT_RESPONSIVE_WIDTH = 375
+
 # Default model used when no per-stage or global override is given.
 DEFAULT_MODEL = "anthropic:claude-sonnet-4-6"
 
@@ -133,6 +136,8 @@ class PipelineDeps:
     build_cap: int = DEFAULT_BUILD_CAP
     visual_cap: int = DEFAULT_VISUAL_CAP
     similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD
+    responsive_width: int = DEFAULT_RESPONSIVE_WIDTH
+    check_responsive: bool = True
 
     # --- supplemental user-provided asset images (from references/) ---
     supplemental_assets: list[Path] = field(default_factory=list)
@@ -159,6 +164,8 @@ class PipelineDeps:
         build_cap: int = DEFAULT_BUILD_CAP,
         visual_cap: int = DEFAULT_VISUAL_CAP,
         similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+        responsive_width: int = DEFAULT_RESPONSIVE_WIDTH,
+        check_responsive: bool = True,
         models: ModelConfig | None = None,
     ) -> "PipelineDeps":
         """Resolve inputs from the ``input/`` convention and ``--name``.
@@ -221,6 +228,8 @@ class PipelineDeps:
             build_cap=build_cap,
             visual_cap=visual_cap,
             similarity_threshold=similarity_threshold,
+            responsive_width=responsive_width,
+            check_responsive=check_responsive,
             skills_dir=resolved_skills_dir if resolved_skills_dir.is_dir() else None,
             models=models or ModelConfig(),
             top_dir=top_dir,

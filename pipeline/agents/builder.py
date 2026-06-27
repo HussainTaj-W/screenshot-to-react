@@ -14,12 +14,24 @@ from pydantic_ai import BinaryContent
 from ..deps import PipelineDeps
 from ..graph.state import VerifyState, VisualVerdict
 from ..graph.verify import VerifyDeps, build_verify_graph
+from ..graph.state import ResponsiveVerdict
 from ..results import BuildVerifyOutcome
 from .builder_agent import (
     build_builder_agent,
     build_fix_build_agent,
     build_judge_agent,
+    build_responsive_judge_agent,
 )
+
+
+def _read_responsive_requirements(requirements_dir: Path) -> str:
+    """Read the documented responsive assumptions for the responsive judge."""
+    parts = []
+    for name in ("responsive.md", "assumptions.md"):
+        f = requirements_dir / name
+        if f.is_file():
+            parts.append(f"=== {name} ===\n{f.read_text()}")
+    return "\n\n".join(parts) or "(no documented responsive assumptions)"
 
 
 def _read_requirements_text(requirements_dir: Path) -> str:
@@ -122,10 +134,12 @@ def make_verify_deps(
     builder_agent = build_builder_agent(deps.models.builder_model, **builder_kwargs)
     fix_agent = build_fix_build_agent(deps.models.fix_build_model)
     judge_agent = build_judge_agent(deps.models.judge_model)
+    responsive_judge_agent = build_responsive_judge_agent(deps.models.judge_model)
 
     requirements_text = _read_requirements_text(deps.requirements_dir)
     reference_png = deps.reference_screenshot.read_bytes()
     available_assets = _available_assets_listing(deps.assets_dir, deps.requirements_dir)
+    responsive_text = _read_responsive_requirements(deps.requirements_dir)
 
     vdeps = VerifyDeps(
         workdir=deps.workdir,
@@ -134,6 +148,8 @@ def make_verify_deps(
         reference_screenshot=deps.reference_screenshot,
         gaps_report_path=deps.gaps_report_path,
         viewport_width=deps.reference_viewport_width,
+        responsive_width=deps.responsive_width,
+        check_responsive=deps.check_responsive,
         model=deps.models.builder_model,
     )
 
@@ -171,6 +187,18 @@ def make_verify_deps(
                 "YOUR LAST BUILD (for reference):",
                 BinaryContent(data=state.last_build_shot, media_type="image/png"),
             ]
+            # Non-blocking mobile-responsive suggestions to apply if they don't
+            # harm the desktop fidelity match.
+            suggestions = getattr(state, "last_responsive_suggestions", [])
+            if suggestions:
+                sug = "\n".join(
+                    f"- [{s.region}] {s.suggestion}" for s in suggestions
+                )
+                prompt += [
+                    "OPTIONAL mobile-responsive improvements (apply if they don't "
+                    "harm the desktop layout; these do not block success):",
+                    sug,
+                ]
         result = await builder_agent.run(prompt)
         return result.output.app_jsx, result.output.index_css
 
@@ -201,9 +229,24 @@ def make_verify_deps(
         state._judge_messages = result.all_messages()  # type: ignore[attr-defined]
         return result.output
 
+    # --- responsive sanity (mobile, no reference) ------------------------- #
+    async def responsive_judge(
+        vd: VerifyDeps, state: VerifyState, mobile_png: bytes
+    ) -> ResponsiveVerdict:
+        prompt = [
+            f"MOBILE BUILD @ {vd.responsive_width}px (no reference exists for "
+            "this width — judge on its own merits):",
+            BinaryContent(data=mobile_png, media_type="image/png"),
+            "DOCUMENTED RESPONSIVE ASSUMPTIONS:",
+            responsive_text,
+        ]
+        result = await responsive_judge_agent.run(prompt)
+        return result.output
+
     vdeps.generate_app = generate_app
     vdeps.fix_build = fix_build
     vdeps.judge = judge
+    vdeps.responsive_judge = responsive_judge
     return vdeps
 
 

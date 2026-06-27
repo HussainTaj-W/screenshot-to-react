@@ -43,6 +43,36 @@ class VisualVerdict(BaseModel):
     notes: str = Field(default="", description="Optional reasoning summary.")
 
 
+class ResponsiveSuggestion(BaseModel):
+    """A non-blocking improvement suggestion for the mobile layout."""
+
+    region: str = Field(description="Where, e.g. 'hero', 'product grid', 'footer'.")
+    suggestion: str = Field(description="A concrete, actionable improvement.")
+
+
+class ResponsiveVerdict(BaseModel):
+    """The responsive sanity judge's output for a mobile capture.
+
+    There is no reference for non-reference viewports, so this judges the page
+    on its own merits. ``broken`` is the objective signal (overflow / elements
+    wider than the viewport / overlap / clipping); ``issues`` are the concrete
+    objective problems to fix; ``suggestions`` are non-blocking improvements.
+    """
+
+    broken: bool = Field(
+        description="True if the mobile layout has OBJECTIVE breakage (overflow, "
+        "elements wider than the viewport, overlapping or clipped content)."
+    )
+    issues: list[Discrepancy] = Field(
+        default_factory=list,
+        description="Objective breakage to fix (only when broken).",
+    )
+    suggestions: list[ResponsiveSuggestion] = Field(
+        default_factory=list,
+        description="Non-blocking improvement suggestions for the mobile layout.",
+    )
+
+
 # --------------------------------------------------------------------------- #
 # Graph state (task 4.1)
 # --------------------------------------------------------------------------- #
@@ -71,6 +101,12 @@ class VerifyState:
 
     # judge trajectory (text verdicts kept; image history trimmed)
     verdict_history: list[VisualVerdict] = field(default_factory=list)
+
+    # objective mobile-responsive breakage from the latest attempt
+    last_responsive_issues: list[Discrepancy] = field(default_factory=list)
+
+    # non-blocking responsive suggestions from the latest attempt
+    last_responsive_suggestions: list = field(default_factory=list)
 
     # advisory quality findings (non-blocking)
     quality_findings: list[str] = field(default_factory=list)

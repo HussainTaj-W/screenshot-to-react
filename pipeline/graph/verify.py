@@ -47,6 +47,10 @@ class VerifyDeps:
     gaps_report_path: Path
     viewport_width: int
 
+    # responsive sanity check config
+    responsive_width: int = 375
+    check_responsive: bool = True
+
     # agents / model
     model: str | None = None
 
@@ -54,6 +58,7 @@ class VerifyDeps:
     generate_app = None  # callable(deps, state) -> (app_jsx, index_css)
     fix_build = None  # callable(deps, state, app_jsx, index_css) -> (app_jsx, index_css)
     judge = None  # callable(deps, state, build_png) -> VisualVerdict
+    responsive_judge = None  # callable(deps, state, mobile_png) -> ResponsiveVerdict
     build_runner = staticmethod(scaffold_mod.build_app)
     capture_runner = staticmethod(capture_mod.capture_page_async)
 
@@ -193,6 +198,15 @@ def build_verify_graph():
             png = deps.capture_runner(server.url, viewport_width=deps.viewport_width)
             if inspect.isawaitable(png):
                 png = await png
+
+            mobile_png = None
+            if deps.check_responsive and deps.responsive_judge is not None:
+                log.info("  capture @ %dpx (mobile responsive)...", deps.responsive_width)
+                mobile_png = deps.capture_runner(
+                    server.url, viewport_width=deps.responsive_width
+                )
+                if inspect.isawaitable(mobile_png):
+                    mobile_png = await mobile_png
         finally:
             await asyncio.to_thread(server.stop)
 
@@ -210,15 +224,48 @@ def build_verify_graph():
         for d in verdict.discrepancies[:8]:
             log.info("    - [%s] %s: %s", d.severity.value, d.region, d.issue)
 
-        # Match on similarity threshold alone: expected placeholder stand-ins
-        # keep the judge's boolean flag false, but high layout fidelity should
-        # still count as success.
-        is_match = verdict.similarity >= state.similarity_threshold
+        # Responsive sanity (mobile). No reference: judge on its own merits.
+        # Objective breakage blocks the match and is added to the fix work.
+        responsive_broken = False
+        if mobile_png is not None:
+            log.info("  responsive judge @ %dpx (LLM)...", deps.responsive_width)
+            rv = await deps.responsive_judge(deps, state, mobile_png)
+            responsive_broken = rv.broken
+            log.info(
+                "  responsive: broken=%s, %d issue(s), %d suggestion(s)",
+                rv.broken,
+                len(rv.issues),
+                len(rv.suggestions),
+            )
+            if rv.broken:
+                for d in rv.issues:
+                    log.info("    - [%s] %s: %s", d.severity.value, d.region, d.issue)
+                # Surface objective breakage to the builder as discrepancies.
+                verdict.discrepancies.extend(rv.issues)
+                state.last_responsive_issues = list(rv.issues)
+            else:
+                state.last_responsive_issues = []
+
+            # Non-blocking suggestions: pass to the builder next pass + log/report.
+            state.last_responsive_suggestions = list(rv.suggestions)
+            for s in rv.suggestions:
+                log.info("    ~ suggest [%s]: %s", s.region, s.suggestion)
+                state.quality_findings.append(
+                    f"Responsive ({deps.responsive_width}px) suggestion "
+                    f"[{s.region}]: {s.suggestion}"
+                )
+
+        # Match on similarity threshold alone (placeholders OK), AND mobile must
+        # not be objectively broken.
+        fidelity_ok = verdict.similarity >= state.similarity_threshold
+        is_match = fidelity_ok and not responsive_broken
         if is_match:
             state.matched = True
-            log.info("  MATCH reached (similarity %.2f >= T %.2f)",
+            log.info("  MATCH reached (similarity %.2f >= T %.2f, responsive OK)",
                      verdict.similarity, state.similarity_threshold)
             return JudgeMatched()
+        if fidelity_ok and responsive_broken:
+            log.info("  fidelity OK but mobile layout is broken -> needs fix")
         if state.visual_attempts < state.visual_cap:
             return JudgeNeedsFix()
         log.info("  visual-fix budget (%d) exhausted -> emitting gaps report",
