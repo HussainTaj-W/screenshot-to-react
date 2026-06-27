@@ -69,6 +69,8 @@ The analyst SHALL treat image files in the references directory other than the r
 #### Scenario: Supplied asset unused
 - **WHEN** a supplied image does not correspond to any slot the analyst identifies
 - **THEN** it is still copied into the output assets so the builder may use it, and the manifest notes it as available
+
+### Requirement: Capture structured design tokens
 The analyst SHALL extract structured design tokens from the screenshot — at minimum a named color palette (token name + hex), a spacing scale, a type scale (sizes and weights), and border radii — recorded in a dedicated `design-tokens.md`. Tokens SHALL be structured so the builder can map them to Tailwind's `@theme` rather than re-deriving values from prose. Each token MAY carry provenance (evidenced vs. assumed).
 
 #### Scenario: Colors captured as named tokens
