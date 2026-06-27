@@ -46,7 +46,7 @@ ENV PIPELINE_TOP=/data \
     PIPELINE_INSTRUCTIONS=/data/input/instructions.md \
     PIPELINE_REFERENCES_DIR=/data/input \
     PIPELINE_SKILLS_DIR=/app/.agents/skills \
-    PIPELINE_NAME=mylanding
+    PIPELINE_NAME=generated-app
 
 # Run the pipeline from the baked code + venv (/app). Mount data at /data and
 # pass secrets via --env-file. Extra CLI flags go after the image name.
