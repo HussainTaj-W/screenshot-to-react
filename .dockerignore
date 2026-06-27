@@ -1,0 +1,14 @@
+# Keep the build context lean.
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.git/
+node_modules/
+dist/
+.netlify/
+debug_requests.jsonl
+run.log
+# Generated output projects are mounted at runtime, not baked in.
+mylanding/

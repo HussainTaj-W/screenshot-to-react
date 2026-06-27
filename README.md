@@ -103,6 +103,26 @@ With `.env` configured (paths + models), it can be as short as:
 uv run screenshot-to-react
 ```
 
+### Docker / Podman
+
+A `Dockerfile` bundles everything (Python + uv, Node, Playwright Chromium;
+Netlify CLI is auto-installed at runtime). Build once, then mount the project
+tree so inputs, outputs, `.env`, and skills come from the host:
+
+```bash
+podman build -t screenshot-to-react .
+
+# Mount the parent project dir (which holds harness/, input/, and the output)
+# and run from harness/ so the PIPELINE_* relative paths resolve as on the host:
+podman run --rm \
+  -v "$PWD/..":/work \
+  --workdir /work/harness \
+  screenshot-to-react
+```
+
+Pass flags after the image name (e.g. `... screenshot-to-react --no-deploy -v`),
+or configure everything via the mounted `.env`. (`docker` works identically.)
+
 ### Inputs
 
 Inputs follow the `input/` convention. The reference screenshot is identified by
