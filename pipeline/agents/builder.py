@@ -137,12 +137,14 @@ def make_verify_deps(
     (optional list) is attached to the builder agent so it can load
     best-practice skills on demand at runtime.
     """
-    builder_kwargs = {}
-    if skills_capabilities:
-        builder_kwargs["capabilities"] = list(skills_capabilities)
-
-    builder_agent = build_builder_agent(deps.models.builder_model, **builder_kwargs)
-    fix_agent = build_fix_build_agent(deps.models.fix_build_model)
+    builder_agent = build_builder_agent(
+        deps.models.builder_model,
+        workdir=deps.workdir,
+        capabilities=list(skills_capabilities) if skills_capabilities else None,
+    )
+    fix_agent = build_fix_build_agent(
+        deps.models.fix_build_model, workdir=deps.workdir
+    )
     judge_agent = build_judge_agent(deps.models.judge_model)
     responsive_judge_agent = build_responsive_judge_agent(deps.models.judge_model)
 
@@ -212,21 +214,19 @@ def make_verify_deps(
                     "harm the desktop layout; these do not block success):",
                     sug,
                 ]
-        result = await builder_agent.run(prompt)
-        return result.output.app_jsx, result.output.index_css
+        # The coding agent writes/edits files directly via its FileSystem tools.
+        await builder_agent.run(prompt)
 
     # --- build fixing ----------------------------------------------------- #
-    async def fix_build(vd: VerifyDeps, state: VerifyState, app_jsx: str, index_css: str):
+    async def fix_build(vd: VerifyDeps, state: VerifyState):
         prompt = [
+            "The Vite build failed. Read the relevant files, fix the cause, and "
+            "write the corrected files so the project compiles.",
             "BUILD ERROR:",
             state.last_build_error or "(unknown)",
-            "CURRENT src/App.jsx:",
-            app_jsx,
-            "CURRENT src/index.css:",
-            index_css,
         ]
-        result = await fix_agent.run(prompt)
-        return result.output.app_jsx, result.output.index_css
+        # The coding agent edits files in place.
+        await fix_agent.run(prompt)
 
     # --- judging ---------------------------------------------------------- #
     async def judge(vd: VerifyDeps, state: VerifyState, build_png: bytes) -> VisualVerdict:

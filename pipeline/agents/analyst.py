@@ -31,6 +31,12 @@ You are a meticulous front-end requirements analyst. You are given a landing-pag
 reference screenshot and a written instructions file. Produce a complete,
 auditable requirements set for rebuilding the page in React.
 
+You also have READ-ONLY file tools (read_file, list_directory, find_files,
+search_files) scoped to the references directory. Use them to discover any extra
+reference material the user provided (additional images, notes, brand files)
+beyond the main screenshot, and factor it into your analysis. You cannot write
+files — your analysis is returned as structured output.
+
 Rules you MUST follow:
 - When the instructions and the screenshot conflict, the INSTRUCTIONS WIN.
   Record every such conflict (topic, both values, resolution).
@@ -72,12 +78,35 @@ your output.
 """
 
 
-def build_analyst_agent(model: str | None = None) -> Agent[None, Requirements]:
-    """Construct the analyst agent with structured ``Requirements`` output."""
+def _readonly_filesystem(root: Path):
+    """A FileSystem capability scoped to ``root`` with writes/edits blocked.
+
+    ``protected_patterns=['**']`` makes every path read-only: read/list/search
+    work, write/edit are rejected. Lets the analyst explore the references dir
+    itself for discovery while keeping the run side-effect free.
+    """
+    from pydantic_ai_harness.filesystem import FileSystem
+
+    return FileSystem(root_dir=root, protected_patterns=["**"])
+
+
+def build_analyst_agent(
+    model: str | None = None, *, references_dir: Path | None = None
+) -> Agent[None, Requirements]:
+    """Construct the analyst agent with structured ``Requirements`` output.
+
+    When ``references_dir`` is given, the analyst also gets read-only file tools
+    scoped to it, so it can discover/inspect reference files itself. The typed
+    ``Requirements`` output contract is unchanged.
+    """
+    capabilities = []
+    if references_dir is not None and Path(references_dir).is_dir():
+        capabilities.append(_readonly_filesystem(Path(references_dir)))
     return Agent(
         model or DEFAULT_MODEL,
         output_type=Requirements,
         instructions=ANALYST_INSTRUCTIONS,
+        capabilities=capabilities,
     )
 
 
@@ -113,7 +142,7 @@ async def analyze(
     Accepts an optional pre-built ``agent`` so tests can inject a TestModel via
     ``agent.override(...)``.
     """
-    agent = agent or build_analyst_agent(model)
+    agent = agent or build_analyst_agent(model, references_dir=deps.references_dir)
 
     instructions_text = deps.instructions_path.read_text()
     screenshot_bytes = deps.reference_screenshot.read_bytes()

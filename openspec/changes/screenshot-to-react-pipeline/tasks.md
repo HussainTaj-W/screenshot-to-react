@@ -54,6 +54,8 @@
 - [x] 4.9a Instruct the judge to treat placeholders as expected (no discrepancy/similarity penalty); filter pure placeholder complaints out of the builder's fix instructions and tell it to keep placeholders
 - [x] 4.9b Add lucide-react to the scaffold; analyst enumerates visible icons; builder renders icons via the library instead of text substitutes
 - [x] 4.9c Responsive sanity check: capture at a mobile width (default 375px) and run a vision judge (no reference); objective breakage blocks the match and feeds the fix loop, subjective notes advisory; configurable via PIPELINE_RESPONSIVE_WIDTH / --responsive-width / --no-responsive-check
+- [x] 4.9d Builder + fix-build are coding agents (pydantic-ai-harness FileSystem tools): write/edit files directly, decompose into multiple component files, edit in place on fix passes (no fixed output schema)
+- [x] 4.9e Analyst gets read-only FileSystem tools (writes blocked) for reference discovery; harden asset filename sanitization against malformed model output
 - [x] 4.10 Wire judge similarity threshold `T` as configuration
 
 ## 5. Deployer agent (netlify-deploy)

@@ -61,10 +61,11 @@ def _make_deps(
     )
 
     async def gen(d, s):
-        return ("export default () => null", '@import "tailwindcss";')
+        # Coding agent writes files directly; simulate that.
+        (tmp / "src" / "App.jsx").write_text("export default () => null")
 
-    async def fix(d, s, a, c):
-        return ("export default () => null /*fixed*/", c)
+    async def fix(d, s):
+        (tmp / "src" / "App.jsx").write_text("export default () => null /*fixed*/")
 
     async def judge(d, s, png):
         counter["judge"] += 1

@@ -55,8 +55,8 @@ class VerifyDeps:
     model: str | None = None
 
     # injectable operations (defaults call the real tooling). Tests override these.
-    generate_app = None  # callable(deps, state) -> (app_jsx, index_css)
-    fix_build = None  # callable(deps, state, app_jsx, index_css) -> (app_jsx, index_css)
+    generate_app = None  # async callable(deps, state) -> None (agent writes files)
+    fix_build = None  # async callable(deps, state) -> None (agent edits files in place)
     judge = None  # callable(deps, state, build_png) -> VisualVerdict
     responsive_judge = None  # callable(deps, state, mobile_png) -> ResponsiveVerdict
     build_runner = staticmethod(scaffold_mod.build_app)
@@ -89,18 +89,6 @@ class JudgeExhausted:
     pass
 
 
-def _read_sources(workdir: Path) -> tuple[str, str]:
-    app = (workdir / "src" / "App.jsx").read_text()
-    css = (workdir / "src" / "index.css").read_text()
-    return app, css
-
-
-def _write_sources(workdir: Path, app_jsx: str, index_css: str) -> None:
-    (workdir / "src").mkdir(parents=True, exist_ok=True)
-    (workdir / "src" / "App.jsx").write_text(app_jsx)
-    (workdir / "src" / "index.css").write_text(index_css)
-
-
 def build_verify_graph():
     """Construct (and return) the verify graph."""
     g = GraphBuilder(
@@ -129,11 +117,10 @@ def build_verify_graph():
             await asyncio.to_thread(scaffold_mod.scaffold_app, deps.workdir)
             await asyncio.to_thread(scaffold_mod.npm_install, deps.workdir)
 
-        # Generate (or regenerate) the page source.
+        # The coding agent writes/edits files directly in the project.
         which = "regenerating" if state.verdict_history else "generating"
-        log.info("  builder: %s page source (LLM)...", which)
-        app_jsx, index_css = await deps.generate_app(deps, state)
-        _write_sources(deps.workdir, app_jsx, index_css)
+        log.info("  builder: %s page source (coding agent)...", which)
+        await deps.generate_app(deps, state)
 
         # Copy extracted assets into public/ so the build bundles them.
         scaffold_mod.copy_extracted_assets(deps.assets_dir, deps.workdir)
@@ -152,13 +139,11 @@ def build_verify_graph():
                 return BuildFailedTerminal()  # hard stop: cannot ship broken code
             state.build_attempts += 1
             log.info(
-                "  build failed; fix attempt %d/%d (LLM repairing compile error)...",
+                "  build failed; fix attempt %d/%d (coding agent repairing)...",
                 state.build_attempts,
                 state.build_cap,
             )
-            app_jsx, index_css = _read_sources(deps.workdir)
-            new_app, new_css = await deps.fix_build(deps, state, app_jsx, index_css)
-            _write_sources(deps.workdir, new_app, new_css)
+            await deps.fix_build(deps, state)
             result = await asyncio.to_thread(deps.build_runner, deps.workdir)
 
         state.last_build_succeeded = True

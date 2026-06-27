@@ -1,11 +1,15 @@
 ## ADDED Requirements
 
 ### Requirement: Scaffold a Vite + React + Tailwind app
-The builder SHALL generate the landing page as a Vite + React + Tailwind project in the output project directory, consuming the requirements set produced by the analyst.
+The builder SHALL generate the landing page as a Vite + React + Tailwind project in the output project directory, consuming the requirements set produced by the analyst. The builder SHALL operate as a coding agent with file tools (read/write/edit/list) scoped to the project directory, writing and editing files directly rather than returning a fixed set of file contents. It MAY decompose the UI into as many component files as good structure calls for; it SHALL always produce `src/App.jsx` (the default-export root) and `src/index.css` (starting with `@import "tailwindcss";`). On fix passes it SHALL edit files in place rather than regenerate from scratch.
 
 #### Scenario: Build from requirements
 - **WHEN** the builder runs with a populated `requirements/` directory
 - **THEN** it produces a Vite + React + Tailwind app implementing the documented functional, visual, and responsive requirements
+
+#### Scenario: Multi-file component structure
+- **WHEN** the builder generates the app
+- **THEN** it may split the UI into multiple component files (e.g. under `src/components/`) imported from `src/App.jsx`, written directly via its file tools
 
 #### Scenario: Extracted assets imported
 - **WHEN** the requirements include extracted asset files

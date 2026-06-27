@@ -1,101 +1,115 @@
-"""LLM agents used inside the verify loop: code generation and the vision judge.
+"""LLM agents used inside the verify loop: the coding agent and the judges.
 
-- The **builder agent** writes/patches ``src/App.jsx`` and ``src/index.css`` from
-  the requirements (and, on fixes, from judge discrepancies + its own last
-  screenshot).
+- The **builder agent** is a coding agent: it has FileSystem tools and writes /
+  edits files directly in the project directory (no fixed output schema), so it
+  can structure the app into as many component files as it wants.
 - The **judge agent** compares the built screenshot to the reference and returns
   a structured ``VisualVerdict``. It is history-aware via ``message_history`` and
   trims image history via ``ProcessHistory``.
-- The **fix-build agent** repairs compile errors from build output.
+- The **fix-build agent** is also a coding agent that repairs compile errors by
+  editing the project files in place.
 """
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pathlib import Path
+
 from pydantic_ai import Agent, BinaryContent
 
 DEFAULT_MODEL = "anthropic:claude-sonnet-4-6"
 
 
 # --------------------------------------------------------------------------- #
-# Builder (code generation) — produces the two source files
+# Builder (coding agent) — writes/edits files directly in the project
 # --------------------------------------------------------------------------- #
 
 
-class GeneratedApp(BaseModel):
-    """The generated React source files."""
-
-    app_jsx: str = Field(description="Full contents of src/App.jsx (a default-export React component).")
-    index_css: str = Field(
-        description="Full contents of src/index.css (must start with `@import \"tailwindcss\";`)."
-    )
-
-
 BUILDER_INSTRUCTIONS = """\
-You are an expert React + Tailwind v4 engineer. You generate a single-page
-landing page as two files: src/App.jsx (a default-export function component) and
-src/index.css (which MUST begin with `@import "tailwindcss";`).
+You are an expert React + Tailwind v4 engineer working as a coding agent inside a
+Vite project. You have file tools (read_file, write_file, edit_file,
+list_directory) scoped to the project root. Use them to build the landing page
+directly — there is no fixed output format; structure the code however a senior
+engineer would.
 
-Before writing any code, load the available best-practice skills and apply them:
-call load_skill for "vercel-react-best-practices", "tailwind-design-system",
-"frontend-design", and "fixing-accessibility". These contain authoritative
-React, Tailwind, design, and accessibility guidance you MUST follow.
+Project facts:
+- It is a Vite + React 18 + Tailwind v4 project. lucide-react is installed.
+- The entry is src/main.jsx which imports './index.css' and './App.jsx'.
+- src/App.jsx MUST exist and default-export the root component composing the page.
+- src/index.css MUST exist and begin with `@import "tailwindcss";`.
+- You MAY (and should) split the UI into multiple component files under
+  src/components/ (e.g. Hero.jsx, ProductCard.jsx, Footer.jsx) and import them.
+  Prefer well-decomposed, reusable components over one giant file.
 
-Follow best practices: semantic HTML, accessible markup, responsive design with
-Tailwind breakpoints. Honor the provided requirements exactly, including the
-conflict resolutions, fidelity-vs-accessibility rulings, and the documented
-responsive assumptions.
+Before writing code, load the best-practice skills and apply them: call
+load_skill for "vercel-react-best-practices", "tailwind-design-system",
+"frontend-design", and "fixing-accessibility". Follow their React, Tailwind,
+design, and accessibility guidance.
 
-Map the DESIGN TOKENS (colors, spacing, type scale, radii, fonts) into a Tailwind
-v4 `@theme { ... }` block in src/index.css using CSS custom properties (e.g.
-`--color-primary`, `--font-sans`, `--text-2xl`), then use those tokens via
-Tailwind utility classes in App.jsx. Use the CONTENT blocks verbatim for copy,
-CTAs, and links.
+Honor the provided requirements exactly: functional sections, content/copy,
+design tokens, conflict resolutions, fidelity-vs-accessibility rulings, and the
+documented responsive assumptions. Map the DESIGN TOKENS (colors, spacing, type
+scale, radii, fonts) into a Tailwind v4 `@theme { ... }` block in src/index.css,
+then use those tokens via Tailwind utility classes. Build a responsive layout
+with Tailwind breakpoints, semantic HTML, and accessible markup.
 
-IMAGES — do your best to fill every image slot, in this preference order:
+IMAGES — fill every image slot, in this preference order:
 1. A user-SUPPLIED real asset for the slot (see AVAILABLE ASSETS / manifest):
-   use it by its public path (e.g. "/hero.png"). Always prefer these.
+   reference it by its public path (e.g. "/hero.png"). Always prefer these.
 2. Otherwise, the generated PLACEHOLDER file for the slot, by its public path.
    Placeholders are correctly-sized intentional stand-ins; the user replaces
    them later with real assets at the SAME filename, so use the given names.
 3. Only if no provided asset fits a slot, you MAY use an external image URL.
 
-ICONS — use the `lucide-react` library (already installed). Import icons from it
-(e.g. `import { ShoppingCart, ChevronDown, ChevronLeft, ChevronRight, Plus,
-Star, ArrowRight, Search, Facebook, Twitter, Instagram } from 'lucide-react'`)
-and render them as components. Reproduce EVERY icon visible in the reference —
-the cart icon (with its notification badge), nav dropdown chevrons, product
-carousel left/right arrows, the round "+" add buttons, star ratings, the
-"more info" arrows, social icons in the footer, and any small overlay controls
-on the hero. Do NOT replace icons with plain text (e.g. don't write the word
-"Cart" where the reference shows a cart icon). Hand-drawn inline SVG is allowed
-only for a brand logo/wordmark that lucide does not provide.
+ICONS — use the `lucide-react` library. Import icons (e.g. ShoppingCart,
+ChevronDown, ChevronLeft, ChevronRight, Plus, Star, ArrowRight, Search, Facebook,
+Twitter, Instagram) and render them as components. Reproduce EVERY icon visible
+in the reference (cart with badge, nav chevrons, carousel arrows, round "+" add
+buttons, star ratings, "more info" arrows, footer social icons, hero overlay
+controls). Do NOT substitute plain text for an icon. Inline SVG only for a brand
+logo/wordmark lucide lacks.
 
-Output ONLY the two file contents via the structured schema.
+When you have written all the files, reply with a brief one-line summary.
 """
 
 FIX_BUILD_INSTRUCTIONS = """\
-You are fixing a build/compile error in a Vite + React + Tailwind project. You
-are given the current src/App.jsx and src/index.css plus the build error output.
-Return corrected, complete contents for BOTH files so the project compiles.
-Change only what is necessary to fix the error.
+You are a coding agent fixing a build/compile error in a Vite + React + Tailwind
+project. You have file tools (read_file, write_file, edit_file, list_directory)
+scoped to the project root. Read the relevant files, fix the cause of the error,
+and write the corrected files. Change only what is necessary to make the project
+compile. Reply with a one-line summary when done.
 """
 
 
-def build_builder_agent(model: str | None = None, **kwargs) -> Agent[None, GeneratedApp]:
+def build_builder_agent(
+    model: str | None = None,
+    *,
+    workdir: Path | None = None,
+    capabilities: list | None = None,
+):
+    """Construct the builder coding agent with FileSystem tools scoped to workdir."""
+    from pydantic_ai_harness.filesystem import FileSystem
+
+    caps = list(capabilities or [])
+    if workdir is not None:
+        caps.append(FileSystem(root_dir=workdir))
     return Agent(
         model or DEFAULT_MODEL,
-        output_type=GeneratedApp,
         instructions=BUILDER_INSTRUCTIONS,
-        **kwargs,
+        capabilities=caps,
     )
 
 
-def build_fix_build_agent(model: str | None = None) -> Agent[None, GeneratedApp]:
+def build_fix_build_agent(model: str | None = None, *, workdir: Path | None = None):
+    """Construct the fix-build coding agent with FileSystem tools."""
+    from pydantic_ai_harness.filesystem import FileSystem
+
+    caps = []
+    if workdir is not None:
+        caps.append(FileSystem(root_dir=workdir))
     return Agent(
         model or DEFAULT_MODEL,
-        output_type=GeneratedApp,
         instructions=FIX_BUILD_INSTRUCTIONS,
+        capabilities=caps,
     )
 
 

@@ -48,7 +48,7 @@ def _patch_everything(monkeypatch):
 
     real_build_agent = analyst_mod.build_analyst_agent
 
-    def fake_analyst(model=None):
+    def fake_analyst(model=None, references_dir=None):
         return real_build_agent(model=TestModel(custom_output_args=fixed))
 
     monkeypatch.setattr(analyst_mod, "build_analyst_agent", fake_analyst)
@@ -84,10 +84,10 @@ def _stub_verify_deps(deps, *, build_ok=True, match_after=1, sim=0.99) -> Verify
     )
 
     async def gen(d, s):
-        return ("export default () => null", '@import "tailwindcss";')
+        (deps.workdir / "src" / "App.jsx").write_text("export default () => null")
 
-    async def fix(d, s, a, c):
-        return (a, c)
+    async def fix(d, s):
+        pass
 
     async def judge(d, s, png):
         counter["judge"] += 1

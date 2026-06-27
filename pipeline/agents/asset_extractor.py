@@ -37,7 +37,7 @@ def realize_assets(
     written: list[str] = []
 
     for asset in requirements.assets:
-        suggested = asset.file or f"{_safe(asset.name)}{_ext_for(asset)}"
+        suggested = _clean_filename(asset.file, asset)
         asset.file = suggested
 
         if asset.strategy is AssetStrategy.PLACEHOLDER:
@@ -85,3 +85,30 @@ def _ext_for(asset) -> str:
     if asset.strategy is AssetStrategy.RECREATE:
         return ".svg"
     return ".png"
+
+
+_VALID_EXTS = (".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif")
+
+
+def _clean_filename(raw: str | None, asset) -> str:
+    """Derive a safe, single-segment filename with a valid image extension.
+
+    Models sometimes emit garbage in the ``file`` field (serialized objects,
+    embedded commas, paths). Sanitize defensively so a bad value can never crash
+    image writing or escape the assets directory.
+    """
+    want_ext = _ext_for(asset)
+    candidate = (raw or "").strip()
+
+    # Take only the basename and stop at the first delimiter that suggests the
+    # model leaked structured data into the filename.
+    candidate = candidate.replace("\\", "/").split("/")[-1]
+    for delim in (",", " ", ":", "{", "}", '"', "'"):
+        candidate = candidate.split(delim)[0]
+
+    stem, _, ext = candidate.rpartition(".")
+    ext = ("." + ext.lower()) if ext else ""
+    if not stem or ext not in _VALID_EXTS:
+        # Fall back to a clean name derived from the asset name.
+        return f"{_safe(asset.name)}{want_ext}"
+    return f"{_safe(stem)}{ext}"

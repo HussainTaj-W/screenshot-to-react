@@ -56,7 +56,11 @@ The analyst SHALL catalog assets implied by the screenshot (logos, images, icons
 - **THEN** the manifest marks it as a placeholder and flags it as a known gap
 
 ### Requirement: Use supplied reference assets
-The analyst SHALL treat image files in the references directory other than the reference screenshot as user-supplied assets available to the build. The analyst SHALL be given the list of these files (and their images) and SHALL map each appropriate one to a slot, recording it in the manifest with a strategy that uses the supplied file rather than generating a placeholder. Supplied asset files SHALL be copied into the output project's asset directory so the build can reference them by name.
+The analyst SHALL treat image files in the references directory other than the reference screenshot as user-supplied assets available to the build. The analyst SHALL be given the list of these files (and their images) and SHALL map each appropriate one to a slot, recording it in the manifest with a strategy that uses the supplied file rather than generating a placeholder. Supplied asset files SHALL be copied into the output project's asset directory so the build can reference them by name. The analyst MAY be given read-only file tools scoped to the references directory to discover additional reference material itself; it SHALL NOT write files (its output remains the structured requirements).
+
+#### Scenario: Analyst discovers reference material
+- **WHEN** the references directory contains extra files beyond the main screenshot
+- **THEN** the analyst may use its read-only file tools to discover and factor them in, while still producing structured requirements (no files written by the analyst)
 
 #### Scenario: Supplied asset mapped to a slot
 - **WHEN** the references directory contains a real image (e.g. a hero photo) alongside the screenshot
