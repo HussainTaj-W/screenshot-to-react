@@ -86,7 +86,7 @@ global default.
 | `PIPELINE_RESPONSIVE_WIDTH` / `--responsive-width` | mobile width (default 375)      |
 | `NETLIFY_SITE_ID` / `--site-id`          | deploy to an existing Netlify site        |
 | `--build-cap`, `--visual-cap`            | fix budgets                               |
-| `--similarity-threshold`                 | match threshold T (default 0.9)           |
+| `--similarity-threshold`                 | match threshold T (default 0.95)          |
 | `--no-responsive-check`                  | disable the mobile responsive check       |
 | `--no-deploy`                            | run analyst + build/verify only           |
 | `-v` / `--verbose`                       | DEBUG logging                             |
