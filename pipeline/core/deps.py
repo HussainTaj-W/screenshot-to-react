@@ -23,8 +23,13 @@ from pathlib import Path
 
 from .config import ModelConfig
 
-# Image extensions recognized as images (screenshot or supplied assets).
+# Raster image extensions a reference screenshot can use (a screenshot is a
+# raster capture, never an SVG).
 _SCREENSHOT_EXTS = (".png", ".jpg", ".jpeg", ".webp")
+
+# Image extensions recognized for supplied assets — a superset that also allows
+# vector/animated formats (logos, icons) the builder can reference directly.
+_ASSET_EXTS = (".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif", ".avif")
 
 # Reserved base names (without extension) for the reference screenshot. Any
 # other image in the references directory is treated as a supplied asset.
@@ -201,10 +206,14 @@ def _all_images(references_dir: Path) -> list[Path]:
     )
 
 
-def _all_images_recursive(references_dir: Path) -> list[Path]:
-    """All images under the references directory, including subfolders."""
+def _all_asset_images_recursive(references_dir: Path) -> list[Path]:
+    """All supplied-asset images under the references dir, including subfolders.
+
+    Uses the broader asset extension set (SVG/GIF/AVIF included) so vector and
+    animated assets are not silently dropped.
+    """
     return sorted(
-        p for p in references_dir.rglob("*") if p.is_file() and p.suffix.lower() in _SCREENSHOT_EXTS
+        p for p in references_dir.rglob("*") if p.is_file() and p.suffix.lower() in _ASSET_EXTS
     )
 
 
@@ -244,5 +253,5 @@ def _find_reference_screenshot(references_dir: Path) -> Path:
 
 
 def supplemental_assets(references_dir: Path, screenshot: Path) -> list[Path]:
-    """Image files under references/ (incl. subfolders) that are NOT the screenshot."""
-    return [p for p in _all_images_recursive(references_dir) if p != screenshot]
+    """Asset image files under references/ (incl. subfolders) that aren't the screenshot."""
+    return [p for p in _all_asset_images_recursive(references_dir) if p != screenshot]

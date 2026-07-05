@@ -72,9 +72,7 @@ def _wait_until_serving(url: str, proc: subprocess.Popen, timeout: float) -> Non
     while time.time() < deadline:
         if proc.poll() is not None:
             out = _drain(proc)
-            raise RuntimeError(
-                "Preview server exited before becoming ready.\n" + out
-            )
+            raise RuntimeError("Preview server exited before becoming ready.\n" + out)
         try:
             with urllib.request.urlopen(url, timeout=2) as resp:
                 if resp.status == 200:
@@ -82,9 +80,7 @@ def _wait_until_serving(url: str, proc: subprocess.Popen, timeout: float) -> Non
         except (urllib.error.URLError, ConnectionError, OSError):
             time.sleep(0.4)
     out = _drain(proc)
-    raise TimeoutError(
-        f"Preview server did not become ready within {timeout}s.\n" + out
-    )
+    raise TimeoutError(f"Preview server did not become ready within {timeout}s.\n" + out)
 
 
 def _drain(proc: subprocess.Popen) -> str:

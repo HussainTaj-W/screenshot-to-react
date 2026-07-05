@@ -131,6 +131,20 @@ def _screenshot_media_type(path: Path) -> str:
     }.get(ext, "image/png")
 
 
+def _viewable_media_type(path: Path) -> str | None:
+    """Raster media type a vision model can render, or None if not previewable.
+
+    SVG/GIF/AVIF and unknown formats return None — they are referenced by path,
+    not shown to the model as an image.
+    """
+    return {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+    }.get(path.suffix.lower())
+
+
 async def analyze(
     deps: PipelineDeps,
     *,
@@ -158,17 +172,25 @@ async def analyze(
     ]
 
     # Supplied asset images (other files in references/). Give the analyst the
-    # filename + image so it can map each to the right slot.
+    # filename + image so it can map each to the right slot. Raster images are
+    # attached so the model can see them; vector/other formats (e.g. SVG) are
+    # listed by name only (most vision models can't render SVG, and the builder
+    # references them by path regardless).
     if deps.supplemental_assets:
         prompt.append(
             "SUPPLIED ASSET IMAGES (real files already provided by the user; "
             "served from the site root as /<filename>). Map each appropriate one "
             "to a slot with strategy 'supplied' and file=<filename>. Do NOT make "
-            "a placeholder for a slot a supplied asset fills."
+            "a placeholder for a slot a supplied asset fills. Files listed by name "
+            "only (e.g. SVGs) are still available — use them by their path."
         )
         for p in deps.supplemental_assets:
-            prompt.append(f"Filename: {p.name}")
-            prompt.append(BinaryContent(data=p.read_bytes(), media_type=_screenshot_media_type(p)))
+            mime = _viewable_media_type(p)
+            if mime is not None:
+                prompt.append(f"Filename: {p.name}")
+                prompt.append(BinaryContent(data=p.read_bytes(), media_type=mime))
+            else:
+                prompt.append(f"Filename (not previewable, use by path): {p.name}")
 
     result = await agent.run(prompt)
     return result.output
