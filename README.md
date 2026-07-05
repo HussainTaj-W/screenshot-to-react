@@ -16,6 +16,32 @@ page**. It runs three stages in a fixed, deterministic order:
      objective breakage (no reference exists for other viewports).
 3. **Deployer** — builds a fresh `dist/` and deploys to Netlify (idempotently).
 
+```mermaid
+flowchart TD
+    subgraph inputs[Inputs]
+        S[Screenshot + instructions]
+    end
+
+    A[Analyst agent<br/>vision + text]
+    subgraph BV[Builder / Verifier loop]
+        B[Builder coding agent<br/>writes/edits files]
+        FB[Fix-build agent<br/>repairs compile errors]
+        VJ[Visual judge<br/>vs reference]
+        RJ[Responsive judge<br/>mobile sanity]
+    end
+    D[Deployer<br/>Netlify]
+
+    S --> A
+    A -->|Requirements + assets| B
+    B --> G{vite build OK?}
+    G -->|no| FB --> B
+    G -->|yes| VJ
+    VJ --> RJ
+    RJ -->|match & sane| D
+    RJ -->|gaps / broken & budget left| B
+    D --> OUT[Live URL]
+```
+
 ## Requirements
 
 ### Python (managed with uv)
