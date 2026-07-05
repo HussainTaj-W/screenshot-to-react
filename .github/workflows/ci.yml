@@ -36,5 +36,5 @@ jobs:
       - name: Test
         run: uv run pytest tests
 
-      - name: Build
-        run: uv build
+      - name: Docker build
+        run: docker build -t screenshot-to-react .
